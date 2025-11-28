@@ -1,4 +1,4 @@
-import SplashGate from "./components/splash/SplashGate";
+import SplashGate from "../components/splash/SplashGate";
 
 export default function Home() {
   return (
