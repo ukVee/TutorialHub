@@ -30,12 +30,12 @@ jobs:
           static_site_generator: next
 
       - name: Build with Next.js 🏗️
-        run: npx next build
+        run: cd tutorial-hub/ npx next build
 
       - name: Upload artifact 📡
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./out
+          path: ./tutorial-hub/out
 
   deploy:
     environment:
