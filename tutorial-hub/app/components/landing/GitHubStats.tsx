@@ -12,6 +12,8 @@ type Stats = {
   following: number;
 };
 
+const GH_USER = process.env.NEXT_PUBLIC_GITHUB_USERNAME || "ukvee";
+
 export default function GitHubStats() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -21,12 +23,14 @@ export default function GitHubStats() {
 
     const load = async () => {
       try {
-        const res = await fetch("/api/github/stats");
+        const res = await fetch(`https://api.github.com/users/${GH_USER}`, {
+          headers: { Accept: "application/vnd.github+json" },
+        });
         if (!res.ok) throw new Error(`Status ${res.status}`);
         const data = (await res.json()) as Stats;
         if (!cancelled) setStats(data);
       } catch (err) {
-        if (!cancelled) setError("GitHub is shy right now.");
+        if (!cancelled) setError("GitHub is shy right now (rate limit or offline).");
         console.error(err);
       }
     };

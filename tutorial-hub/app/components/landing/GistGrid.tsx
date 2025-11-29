@@ -10,6 +10,8 @@ type Gist = {
   url: string;
 };
 
+const GH_USER = process.env.NEXT_PUBLIC_GITHUB_USERNAME || "ukvee";
+
 export default function GistGrid() {
   const [gists, setGists] = useState<Gist[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -20,12 +22,21 @@ export default function GistGrid() {
 
     const load = async () => {
       try {
-        const res = await fetch("/api/github/gists");
+        const res = await fetch(`https://api.github.com/users/${GH_USER}/gists`, {
+          headers: { Accept: "application/vnd.github+json" },
+        });
         if (!res.ok) throw new Error(`Status ${res.status}`);
-        const data = (await res.json()) as Gist[];
-        if (!cancelled) setGists(data);
+        const data = (await res.json()) as any[];
+        const simplified = data.map((gist) => ({
+          id: gist.id,
+          description: gist.description || "Untitled gist",
+          files: Object.keys(gist.files || {}),
+          created_at: gist.created_at,
+          url: gist.html_url,
+        }));
+        if (!cancelled) setGists(simplified);
       } catch (err) {
-        if (!cancelled) setError("Could not fetch gists right now.");
+        if (!cancelled) setError("Could not fetch gists right now (rate limit or offline).");
         console.error(err);
       } finally {
         if (!cancelled) setLoading(false);
