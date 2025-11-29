@@ -15,7 +15,7 @@ const firamono = Fira_Mono({
 
 export const metadata: Metadata = {
   title: "Tutorial Hub",
-  description: "Your place for My tutorials.",
+  description: "Ukv Blog, Tech Blog, porfolio",
 };
 
 export default function RootLayout({
