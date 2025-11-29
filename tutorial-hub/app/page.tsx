@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import GitHubStats from "./components/landing/GitHubStats";
 import GistGrid from "./components/landing/GistGrid";
 import ApologyMessage from "./components/landing/ApologyMessage";
@@ -16,7 +17,7 @@ type Mode = "HOME" | "GLITCH" | "TERMINAL";
 const GLITCH_OFFSET_AFTER_SPLASH_MS = 2000;
 // Glitch now has 4 stages; keep overall window in sync with slices.
 const GLITCH_DURATION_MS = 1200;
-const TERMINAL_DURATION_MS = 7000;
+const TERMINAL_DURATION_MS = 5000;
 const HOME_TO_MESSAGE_DELAY_MS = 2000;
 const APOLOGY_DURATION_MS = 7000;
 const POST_SPLASH_TOTAL_MS = 4400; // matches SplashGate run + fade
@@ -29,7 +30,11 @@ export default function Home() {
   const [splashDone, setSplashDone] = useState(false);
   const [sequenceStarted, setSequenceStarted] = useState(false);
   const [showPostSplash, setShowPostSplash] = useState(false);
+  const [terminalScript, setTerminalScript] = useState<{ at: number; line: string }[]>([]);
+  const [terminalScriptKey, setTerminalScriptKey] = useState(0);
   const timersRef = useRef<number[]>([]);
+
+  const router = useRouter();
 
   // Load settings once.
   useEffect(() => {
@@ -70,11 +75,18 @@ export default function Home() {
       const stopGlitchTimer = window.setTimeout(() => {
         console.log("[Home] stop glitch overlay, show TERMINAL");
         setGlitchActive(false);
+        setTerminalScript([
+          { at: 0, line: "[ukDefender] Unidentified user in space." },
+          { at: 2000, line: "[System] Rebooting 3." },
+          { at: 3000, line: "[System] Rebooting 2." },
+          { at: 4000, line: "[System] Rebooting 1." },
+        ]);
+        setTerminalScriptKey((k) => k + 1);
         setMode("TERMINAL");
       }, GLITCH_DURATION_MS);
       timersRef.current.push(stopGlitchTimer);
 
-      // Keep terminal up for 7 seconds.
+      // Keep terminal up for 5 seconds.
       const endTerminalTimer = window.setTimeout(() => {
         console.log("[Home] hide TERMINAL, back to HOME and show post-splash");
         setMode("HOME");
@@ -106,7 +118,7 @@ export default function Home() {
       <div className="fixed inset-0 z-60 bg-[#05040b]">
         <NeuralMesh />
         <div className="relative z-10 flex h-full items-center justify-center p-6">
-          <MockTerminal />
+          <MockTerminal script={terminalScript} scriptKey={`run-${terminalScriptKey}`} />
         </div>
       </div>
     );
@@ -134,7 +146,7 @@ export default function Home() {
                 <div className="flex flex-wrap gap-3">
                   <button
                     className="rounded-full bg-slate-100 px-5 py-2 text-sm font-semibold text-slate-900 shadow-lg shadow-slate-900/40 transition hover:-translate-y-0.5 hover:bg-white"
-                    onClick={() => window.location.assign("/terminal")}
+                    onClick={() => router.push('/terminal')}
                   >
                     Open Terminal
                   </button>

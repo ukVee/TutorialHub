@@ -4,13 +4,15 @@ import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react"
 
 type MockTerminalProps = {
   className?: string;
+  script?: { at: number; line: string }[];
+  scriptKey?: string;
 };
 
 const IDLE_MIN = 20000;
 const IDLE_MAX = 40000;
 const MAX_HISTORY = 200;
 
-export default function MockTerminal({ className = "" }: MockTerminalProps) {
+export default function MockTerminal({ className = "", script = [], scriptKey }: MockTerminalProps) {
   const [input, setInput] = useState("");
   const [history, setHistory] = useState<string[]>([
     "[system] booting tutorial hub interface...",
@@ -20,6 +22,7 @@ export default function MockTerminal({ className = "" }: MockTerminalProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const logRef = useRef<HTMLDivElement | null>(null);
   const idleTimerRef = useRef<number | null>(null);
+  const scriptTimersRef = useRef<number[]>([]);
 
   const idleGenerators = useMemo(
     () => [
@@ -59,12 +62,32 @@ Available commands:
     scheduleIdleLog();
     return () => {
       if (idleTimerRef.current) window.clearTimeout(idleTimerRef.current);
+      scriptTimersRef.current.forEach((t) => window.clearTimeout(t));
+      scriptTimersRef.current = [];
     };
   }, []);
 
   useEffect(() => {
     requestAnimationFrame(scrollToBottom);
   }, [history]);
+
+  // Run scripted lines (used by glitch/terminal sequence)
+  useEffect(() => {
+    scriptTimersRef.current.forEach((t) => window.clearTimeout(t));
+    scriptTimersRef.current = [];
+    if (!script?.length) return;
+
+    const start = performance.now();
+    script.forEach(({ at, line }) => {
+      const timer = window.setTimeout(() => appendHistory(line), Math.max(0, at));
+      scriptTimersRef.current.push(timer);
+    });
+
+    return () => {
+      scriptTimersRef.current.forEach((t) => window.clearTimeout(t));
+      scriptTimersRef.current = [];
+    };
+  }, [script, scriptKey]);
 
   const focusInput = () => {
     containerRef.current?.focus();
