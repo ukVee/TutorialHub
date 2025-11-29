@@ -15,6 +15,7 @@ export default function MockTerminal({ className = "" }: MockTerminalProps) {
   const [history, setHistory] = useState<string[]>([
     "[system] booting tutorial hub interface...",
     "[system] mesh sync online",
+    "[message] Welcome valued user, type 'help' to get started."
   ]);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const logRef = useRef<HTMLDivElement | null>(null);

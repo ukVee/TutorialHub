@@ -21,7 +21,7 @@ type NeuralMeshProps = {
 };
 
 const GRID_SPACING = 120;
-const MAX_FORCE_DISTANCE = 150;
+const MAX_FORCE_DISTANCE = 250;
 const DAMPING = 0.9;
 const SPRING_STRENGTH = 0.0028;
 const RESET_INTERVAL_MIN = 60000;
