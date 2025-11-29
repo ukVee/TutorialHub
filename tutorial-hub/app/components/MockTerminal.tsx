@@ -32,6 +32,27 @@ export default function MockTerminal({ className = "" }: MockTerminalProps) {
     []
   );
 
+  const commands = useMemo<Record<string, () => string | void>>(
+    () => ({
+      spike: () => {
+        window.dispatchEvent(new CustomEvent("terminal-spike"));
+        return "Spiking a random node...";
+      },
+      shake: () => {
+        window.dispatchEvent(new CustomEvent("terminal-shake"));
+        return "Shaking all nodes...";
+      },
+      help: () => {
+        return `
+Available commands:
+  spike   – Trigger a random node spike
+  shake   – Vibrate all nodes
+  help    – Show this help menu`;
+      },
+    }),
+    []
+  );
+
   useEffect(() => {
     focusInput();
     scheduleIdleLog();
@@ -71,6 +92,17 @@ export default function MockTerminal({ className = "" }: MockTerminalProps) {
     });
   };
 
+  const executeCommand = (command: string) => {
+    const handler = commands[command];
+    if (!handler) {
+      appendHistory(`[error] unknown command: ${command}`);
+      return;
+    }
+
+    const output = handler();
+    if (output) appendHistory(output);
+  };
+
   const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     e.preventDefault();
     if (e.key === "Backspace") {
@@ -79,6 +111,10 @@ export default function MockTerminal({ className = "" }: MockTerminalProps) {
     }
     if (e.key === "Enter") {
       appendHistory(`> ${input || ""}`);
+      const command = input.trim().toLowerCase();
+      if (command) {
+        executeCommand(command);
+      }
       setInput("");
       return;
     }

@@ -141,6 +141,36 @@ export default function NeuralMesh({ className = "", targetFps = 60 }: NeuralMes
     nodesRef.current = nodes;
   };
 
+  const spikeRandomNode = () => {
+    const nodes = nodesRef.current;
+    if (!nodes.length) return;
+    const index = Math.floor(Math.random() * nodes.length);
+    const node = nodes[index];
+    node.velocityY -= 5;
+  };
+
+  const shakeAllNodes = () => {
+    const nodes = nodesRef.current;
+    if (!nodes.length) return;
+    nodes.forEach((n) => {
+      n.velocityX += (Math.random() - 0.5) * 2;
+      n.velocityY += (Math.random() - 0.5) * 2;
+    });
+  };
+
+  useEffect(() => {
+    const handleSpike = () => spikeRandomNode();
+    const handleShake = () => shakeAllNodes();
+
+    window.addEventListener("terminal-spike", handleSpike);
+    window.addEventListener("terminal-shake", handleShake);
+
+    return () => {
+      window.removeEventListener("terminal-spike", handleSpike);
+      window.removeEventListener("terminal-shake", handleShake);
+    };
+  }, []);
+
   const triggerSpike = (index: number) => {
     const { cols, rows } = gridRef.current;
     const nodes = nodesRef.current;
