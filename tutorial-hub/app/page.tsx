@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import GitHubStats from "./components/landing/GitHubStats";
 import GistGrid from "./components/landing/GistGrid";
 import ApologyMessage from "./components/landing/ApologyMessage";
-import GlitchSlices from "./components/landing/GlitchSlices";
+import GlitchOverlay from "./components/landing/GlitchOverlay";
+import CompositeGlitchScene from "./components/landing/CompositeGlitchScene";
 import { UserSettings, defaultSettings, getSettings, saveSettings } from "./lib/settings";
 import SplashGate from "./components/splash/SplashGate";
 import NeuralMesh from "./components/terminal/NeuralMesh";
@@ -13,8 +14,8 @@ import MockTerminal from "./components/terminal/MockTerminal";
 type Mode = "HOME" | "GLITCH" | "TERMINAL";
 
 const GLITCH_OFFSET_AFTER_SPLASH_MS = 2000;
-// Debug: lengthen to improve visibility during troubleshooting.
-const GLITCH_DURATION_MS = 800; // overlay also runs 600-800ms internally
+// Glitch now has 4 stages; keep overall window in sync with slices.
+const GLITCH_DURATION_MS = 1200;
 const TERMINAL_DURATION_MS = 7000;
 const HOME_TO_MESSAGE_DELAY_MS = 2000;
 const APOLOGY_DURATION_MS = 7000;
@@ -54,7 +55,7 @@ export default function Home() {
 
     console.log("[Home] starting sequence after splash");
     setSequenceStarted(true);
-    const updated = { ...settings, displayGlitch: false };
+    const updated = { ...settings, displayGlitch: true };
     saveSettings(updated);
     setSettings(updated);
     console.log("[Home] displayGlitch toggled off for future visits");
@@ -113,7 +114,8 @@ export default function Home() {
 
   return (
     <>
-      <GlitchSlices active={mode === "GLITCH"} />
+      <CompositeGlitchScene active={mode === "GLITCH"} />
+      <GlitchOverlay active={glitchActive} />
       <ApologyMessage show={showApology} />
       <SplashGate onComplete={() => setSplashDone(true)} debugLabel="SplashInitial">
         <main className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-black text-slate-100">

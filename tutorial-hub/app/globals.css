@@ -99,20 +99,58 @@ body {
   inset: 0;
   z-index: 65;
   pointer-events: none;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.composite-glitch {
+  position: fixed;
+  inset: 0;
+  z-index: 65;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 140ms ease;
+}
+
+.composite-glitch--show {
+  opacity: 1;
 }
 
 .glitch-slice {
   position: absolute;
   inset: 0;
   overflow: hidden;
-  background: #06060f;
+  background: #05040b;
+  mix-blend-mode: screen;
+  animation: glitch-jitter 120ms steps(2, end) infinite;
 }
 
-.glitch-slice--diagonal {
-  /* Long skinny band from bottom-left to top-right */
-  clip-path: polygon(0 70%, 100% 30%, 100% 48%, 0 88%);
-  opacity: 0.9;
-  filter: saturate(1.1);
+.glitch-slice__bg,
+.glitch-slice__terminal {
+  position: absolute;
+  inset: 0;
+}
+
+.glitch-slice__terminal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+}
+
+.glitch-slice__label {
+  position: absolute;
+  bottom: 12px;
+  left: 16px;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: #fef3c7;
+  text-transform: uppercase;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
+  background: rgba(0, 0, 0, 0.45);
+  padding: 4px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(1px);
 }
 
 .glitch-slice__terminal-content {
@@ -142,6 +180,17 @@ body {
   left: 20px;
 }
 
+@keyframes glitch-jitter {
+  0% {
+    transform: translate3d(-2px, 0, 0);
+  }
+  50% {
+    transform: translate3d(2px, -1px, 0);
+  }
+  100% {
+    transform: translate3d(-1px, 1px, 0);
+  }
+}
 
 .glitch-layer {
   position: absolute;
