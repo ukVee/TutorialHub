@@ -1,12 +1,16 @@
 import SplashGate from "./components/splash/SplashGate";
+import NeuralMesh from "./components/NeuralMesh";
+import MockTerminal from "./components/MockTerminal";
 
 export default function Home() {
   return (
     <SplashGate>
-      <main className="p-12">
-        <h1 className="text-4xl font-bold">TutorialHub</h1>
-        <p className="mt-4 text-lg">Static blog frontend coming soon.</p>
-      </main>
+      <div className="relative w-full h-screen overflow-hidden bg-[#05040b]">
+        <NeuralMesh />
+        <div className="relative z-10 flex items-center justify-center h-full p-6">
+          <MockTerminal />
+        </div>
+      </div>
     </SplashGate>
   );
 }
