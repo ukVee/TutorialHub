@@ -116,41 +116,28 @@ body {
   opacity: 1;
 }
 
-.glitch-slice {
+.glitch-slice-layer {
   position: absolute;
   inset: 0;
-  overflow: hidden;
-  background: #05040b;
   mix-blend-mode: screen;
+  transition: opacity 60ms linear;
+  overflow: hidden;
+}
+
+.glitch-slice-content {
+  position: absolute;
+  inset: 0;
+  background: #05040b;
   animation: glitch-jitter 120ms steps(2, end) infinite;
 }
 
-.glitch-slice__bg,
-.glitch-slice__terminal {
+.glitch-terminal {
   position: absolute;
   inset: 0;
-}
-
-.glitch-slice__terminal {
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 18px;
-}
-
-.glitch-slice__label {
-  position: absolute;
-  bottom: 12px;
-  left: 16px;
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  color: #fef3c7;
-  text-transform: uppercase;
-  text-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
-  background: rgba(0, 0, 0, 0.45);
-  padding: 4px 8px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(1px);
 }
 
 .glitch-slice__terminal-content {

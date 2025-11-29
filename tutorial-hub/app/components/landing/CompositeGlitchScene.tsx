@@ -1,44 +1,38 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import GlitchSlice from "./GlitchSlice";
+import NeuralMesh from "../terminal/NeuralMesh";
+import MockTerminal from "../terminal/MockTerminal";
 
 type Props = {
   active: boolean;
+  terminalScript?: { at: number; line: string }[];
+  terminalScriptKey?: string | number;
 };
 
-const SLICE_INTERVAL_MS = 180; // time between slice reveals
-const TOTAL_SLICES = 4;
+const SLICE_INTERVAL_MS = 150;
 
-export default function CompositeGlitchScene({ active }: Props) {
+export default function CompositeGlitchScene({ active, terminalScript, terminalScriptKey }: Props) {
   const [visibleCount, setVisibleCount] = useState(0);
   const [visible, setVisible] = useState(false);
   const timersRef = useRef<number[]>([]);
 
   const slices = useMemo(
     () => [
-      {
-        clipPath: "polygon(0 60%, 100% 40%, 100% 44%, 0 64%)",
-        label: "glitch 1",
-      },
-      {
-        clipPath: "polygon(0 68%, 100% 48%, 100% 52%, 0 72%)",
-        label: "glitch 2",
-      },
-      {
-        clipPath: "polygon(0 76%, 100% 56%, 100% 60%, 0 80%)",
-        label: "glitch 3",
-      },
-      {
-        clipPath: "polygon(0 84%, 100% 64%, 100% 68%, 0 88%)",
-        label: "glitch 4",
-      },
+      // down-right slash, upper third
+      { clip: "polygon(0 52%, 100% 32%, 100% 40%, 0 60%)" },
+      // up-right slash, mid band
+      { clip: "polygon(0 42%, 100% 62%, 100% 68%, 0 48%)" },
+      // down-right slash, lower band
+      { clip: "polygon(0 68%, 100% 48%, 100% 56%, 0 76%)" },
+      // up-right slash, lower band
+      { clip: "polygon(0 78%, 100% 98%, 100% 100%, 0 82%)" },
     ],
     []
   );
 
   useEffect(() => {
-    timersRef.current.forEach((id) => window.clearTimeout(id));
+    timersRef.current.forEach((t) => window.clearTimeout(t));
     timersRef.current = [];
 
     if (!active) {
@@ -50,28 +44,39 @@ export default function CompositeGlitchScene({ active }: Props) {
     setVisible(true);
     setVisibleCount(1);
 
-    for (let i = 1; i < TOTAL_SLICES; i += 1) {
+    for (let i = 1; i < slices.length; i += 1) {
       const t = window.setTimeout(() => setVisibleCount(i + 1), SLICE_INTERVAL_MS * i);
       timersRef.current.push(t);
     }
 
     return () => {
-      timersRef.current.forEach((id) => window.clearTimeout(id));
+      timersRef.current.forEach((t) => window.clearTimeout(t));
       timersRef.current = [];
     };
-  }, [active]);
+  }, [active, slices.length]);
 
   if (!visible) return null;
 
   return (
     <div className={`composite-glitch ${active ? "composite-glitch--show" : ""}`} aria-hidden>
-      {slices.slice(0, visibleCount).map((slice, idx) => (
-        <GlitchSlice
-          key={slice.label}
-          clipPath={slice.clipPath}
-          zIndex={60 + idx}
-          label={slice.label}
-        />
+      {slices.map((slice, idx) => (
+        <div
+          key={idx}
+          className="glitch-slice-layer"
+          style={{
+            clipPath: slice.clip,
+            WebkitClipPath: slice.clip,
+            opacity: idx < visibleCount ? 1 : 0,
+            zIndex: 70 + idx,
+          }}
+        >
+          <div className="glitch-slice-content">
+            <NeuralMesh />
+            <div className="glitch-terminal">
+              <MockTerminal script={terminalScript} scriptKey={terminalScriptKey} />
+            </div>
+          </div>
+        </div>
       ))}
     </div>
   );

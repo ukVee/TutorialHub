@@ -9,7 +9,7 @@ export default function Terminal() {
     <div className="relative w-full h-screen overflow-hidden bg-[#05040b]">
       <NeuralMesh />
       <div className="relative z-10 flex items-center justify-center h-full p-6">
-        <MockTerminal />
+        <MockTerminal greet />
       </div>
     </div>
   );

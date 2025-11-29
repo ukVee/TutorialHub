@@ -5,19 +5,25 @@ import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react"
 type MockTerminalProps = {
   className?: string;
   script?: { at: number; line: string }[];
-  scriptKey?: string;
+  scriptKey?: string | number;
+  greet?: boolean;
 };
 
 const IDLE_MIN = 20000;
 const IDLE_MAX = 40000;
 const MAX_HISTORY = 200;
 
-export default function MockTerminal({ className = "", script = [], scriptKey }: MockTerminalProps) {
+export default function MockTerminal({
+  className = "",
+  script = [],
+  scriptKey,
+  greet = false,
+}: MockTerminalProps) {
   const [input, setInput] = useState("");
   const [history, setHistory] = useState<string[]>([
     "[system] booting tutorial hub interface...",
     "[system] mesh sync online",
-    "[message] Welcome valued user, type 'help' to get started."
+    ...(greet ? ["[message] Welcome valued user, type 'help' to get started."] : []),
   ]);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const logRef = useRef<HTMLDivElement | null>(null);

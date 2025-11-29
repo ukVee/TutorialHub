@@ -18,7 +18,7 @@ const GLITCH_OFFSET_AFTER_SPLASH_MS = 2000;
 // Glitch now has 4 stages; keep overall window in sync with slices.
 const GLITCH_DURATION_MS = 1200;
 const TERMINAL_DURATION_MS = 5000;
-const HOME_TO_MESSAGE_DELAY_MS = 2000;
+const HOME_TO_MESSAGE_DELAY_MS = 1000;
 const APOLOGY_DURATION_MS = 7000;
 const POST_SPLASH_TOTAL_MS = 4400; // matches SplashGate run + fade
 
@@ -76,10 +76,15 @@ export default function Home() {
         console.log("[Home] stop glitch overlay, show TERMINAL");
         setGlitchActive(false);
         setTerminalScript([
-          { at: 0, line: "[ukDefender] Unidentified user in space." },
-          { at: 2000, line: "[System] Rebooting 3." },
-          { at: 3000, line: "[System] Rebooting 2." },
-          { at: 4000, line: "[System] Rebooting 1." },
+          { at: 0, line: "[System][Critical] Malfunction occured, Checking ukVDefender status" },
+          { at: 400, line: "[ukVDefender] Status:" },
+          { at: 900, line: "[ukVDefender] panic'd: true" },
+          { at: 1400, line: '[ukVDefender] defensive_operations: "active"' },
+          { at: 1900, line: '[ukVDefender] Check logs with "ukvd logs"' },
+          { at: 2400, line: "[ukDefender] Unidentified user in space." },
+          { at: 3000, line: "[System] Rebooting 3." },
+          { at: 3800, line: "[System] Rebooting 2." },
+          { at: 4600, line: "[System] Rebooting 1." },
         ]);
         setTerminalScriptKey((k) => k + 1);
         setMode("TERMINAL");
@@ -118,7 +123,7 @@ export default function Home() {
       <div className="fixed inset-0 z-60 bg-[#05040b]">
         <NeuralMesh />
         <div className="relative z-10 flex h-full items-center justify-center p-6">
-          <MockTerminal script={terminalScript} scriptKey={`run-${terminalScriptKey}`} />
+          <MockTerminal script={terminalScript} scriptKey={`run-${terminalScriptKey}`} greet={false} />
         </div>
       </div>
     );
@@ -126,7 +131,11 @@ export default function Home() {
 
   return (
     <>
-      <CompositeGlitchScene active={mode === "GLITCH"} />
+      <CompositeGlitchScene
+        active={mode === "GLITCH"}
+        terminalScript={terminalScript}
+        terminalScriptKey={terminalScriptKey}
+      />
       <GlitchOverlay active={glitchActive} />
       <ApologyMessage show={showApology} />
       <SplashGate onComplete={() => setSplashDone(true)} debugLabel="SplashInitial">
