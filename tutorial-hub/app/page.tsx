@@ -78,7 +78,7 @@ export default function Home() {
         setTerminalScript([
           { at: 0, line: "[System][Critical] Malfunction occured, Checking ukVDefender status" },
           { at: 400, line: "[ukVDefender] Status:" },
-          { at: 900, line: "[ukVDefender] panic'd: true" },
+          { at: 900, line: "[ukVDefender] panic: true" },
           { at: 1400, line: '[ukVDefender] defensive_operations: "active"' },
           { at: 1900, line: '[ukVDefender] Check logs with "ukvd logs"' },
           { at: 2400, line: "[ukDefender] Unidentified user in space." },
@@ -145,12 +145,10 @@ export default function Home() {
               <div className="space-y-6">
                 <p className="text-xs uppercase tracking-[0.28em] text-slate-400">Tutorial Hub</p>
                 <h1 className="text-4xl font-semibold leading-tight text-white md:text-5xl">
-                  Code experiments, dev notes, and a live terminal playground.
+                  Gist Tutorials, my bash scripts that I use, and a live terminal playground.
                 </h1>
                 <p className="text-base text-slate-200/90 leading-relaxed">
-                  I collect small lessons, visualizations, and utility scripts here. Jump into the
-                  interactive terminal or skim the GitHub activity to see what's being built in real
-                  time.
+                  Hii you can call me vee, I love all things linux.  I really do.  If you happen to run Arch linux, I may have some goodies for you below.
                 </p>
                 <div className="flex flex-wrap gap-3">
                   <button
@@ -169,7 +167,7 @@ export default function Home() {
               </div>
               <div className="panel ring-1 ring-slate-800/80 shadow-2xl shadow-slate-950/60 backdrop-blur">
                 <p className="text-sm text-slate-300/90">
-                  Local settings are stored on your device so the intro glitch only happens once.
+                  Local settings are stored on your device.
                   Current preference:
                 </p>
                 <div className="mt-3 flex items-center gap-3 text-sm text-slate-100">
@@ -187,7 +185,7 @@ export default function Home() {
                 <div>
                   <p className="text-xs uppercase tracking-[0.28em] text-slate-400">GitHub Pulse</p>
                   <h2 id="github-stats" className="text-2xl font-semibold text-white">
-                    Recent stats
+                    Current Stats
                   </h2>
                 </div>
               </div>
