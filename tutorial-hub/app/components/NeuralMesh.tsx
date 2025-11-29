@@ -29,6 +29,8 @@ const RESET_INTERVAL_MAX = 120000;
 const SPIKE_INTERVAL_MIN = 3000;
 const SPIKE_INTERVAL_MAX = 12000;
 const SPIKE_DECAY = 0.0011;
+const SHAKE_DURATION = 10000; // ms
+const SHAKE_INTENSITY = 0.35;
 const BACKGROUND = "#04030a";
 
 export default function NeuralMesh({ className = "", targetFps = 60 }: NeuralMeshProps) {
@@ -54,6 +56,7 @@ export default function NeuralMesh({ className = "", targetFps = 60 }: NeuralMes
     startedAt: 0,
     duration: 1400,
   });
+  const shakeWindowRef = useRef<{ active: boolean; until: number }>({ active: false, until: 0 });
   const resizeTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -144,23 +147,32 @@ export default function NeuralMesh({ className = "", targetFps = 60 }: NeuralMes
   const spikeRandomNode = () => {
     const nodes = nodesRef.current;
     if (!nodes.length) return;
-    const index = Math.floor(Math.random() * nodes.length);
-    const node = nodes[index];
-    node.velocityY -= 5;
+    const pickIndex = () => Math.floor(Math.random() * nodes.length);
+
+    // First spike always fires.
+    triggerSpike(pickIndex(), 4.2);
+
+    // Chain reactions: 50% chance for the first follow-up, then 25% for each further link.
+    let chainProb = 0.5;
+    while (Math.random() < chainProb) {
+      triggerSpike(pickIndex(), 3.4);
+      chainProb = 0.25;
+    }
   };
 
-  const shakeAllNodes = () => {
+  const shakeAllNodes = (now: number) => {
     const nodes = nodesRef.current;
     if (!nodes.length) return;
     nodes.forEach((n) => {
       n.velocityX += (Math.random() - 0.5) * 2;
       n.velocityY += (Math.random() - 0.5) * 2;
     });
+    shakeWindowRef.current = { active: true, until: now + SHAKE_DURATION };
   };
 
   useEffect(() => {
     const handleSpike = () => spikeRandomNode();
-    const handleShake = () => shakeAllNodes();
+    const handleShake = () => shakeAllNodes(performance.now());
 
     window.addEventListener("terminal-spike", handleSpike);
     window.addEventListener("terminal-shake", handleShake);
@@ -171,7 +183,7 @@ export default function NeuralMesh({ className = "", targetFps = 60 }: NeuralMes
     };
   }, []);
 
-  const triggerSpike = (index: number) => {
+  const triggerSpike = (index: number, impulseScale = 1) => {
     const { cols, rows } = gridRef.current;
     const nodes = nodesRef.current;
     if (!nodes.length) return;
@@ -180,8 +192,8 @@ export default function NeuralMesh({ className = "", targetFps = 60 }: NeuralMes
       const node = nodes[idx];
       if (!node) return;
       node.spikeTimer = 1;
-      node.velocityX += randomRange(-0.6, 0.6);
-      node.velocityY += randomRange(-0.6, 0.6);
+      node.velocityX += randomRange(-0.6, 0.6) * impulseScale;
+      node.velocityY += randomRange(-0.6, 0.6) * impulseScale;
     };
 
     mark(index);
@@ -197,11 +209,30 @@ export default function NeuralMesh({ className = "", targetFps = 60 }: NeuralMes
       (row + 1) * cols + (col - 1),
       (row + 1) * cols + (col + 1),
     ];
-    neighbors.forEach((n) => {
+    neighbors.forEach((n, i) => {
       if (n >= 0 && n < nodes.length) {
+        const falloff = i < 4 ? 0.7 : 0.5;
         mark(n);
+        nodes[n].velocityX *= falloff;
+        nodes[n].velocityY *= falloff;
       }
     });
+
+    const origin = nodes[index];
+    if (origin) {
+      for (let i = 0; i < nodes.length; i++) {
+        if (i === index) continue;
+        const node = nodes[i];
+        const dx = node.x - origin.x;
+        const dy = node.y - origin.y;
+        const dist = Math.hypot(dx, dy) || 1;
+        const influence = Math.max(0, 1 - dist / 220);
+        if (influence <= 0) continue;
+        const push = 0.4 * impulseScale * influence;
+        node.velocityX += (dx / dist) * push;
+        node.velocityY += (dy / dist) * push;
+      }
+    }
   };
 
   const beginReset = (now: number) => {
@@ -256,6 +287,11 @@ export default function NeuralMesh({ className = "", targetFps = 60 }: NeuralMes
     const dt = deltaMs / 16.666;
     const mouse = mouseRef.current;
     const { cols } = gridRef.current;
+    const shaking = shakeWindowRef.current;
+    const shakeActive = shaking.active && timeMs < shaking.until;
+    if (shakeActive === false && shaking.active) {
+      shakeWindowRef.current.active = false;
+    }
 
     for (let i = 0; i < nodes.length; i++) {
       const node = nodes[i];
@@ -277,6 +313,11 @@ export default function NeuralMesh({ className = "", targetFps = 60 }: NeuralMes
           fx += (dx / dist) * pull;
           fy += (dy / dist) * pull;
         }
+      }
+
+      if (shakeActive) {
+        fx += (Math.random() - 0.5) * SHAKE_INTENSITY;
+        fy += (Math.random() - 0.5) * SHAKE_INTENSITY;
       }
 
       node.velocityX = (node.velocityX + ax + fx) * DAMPING;
