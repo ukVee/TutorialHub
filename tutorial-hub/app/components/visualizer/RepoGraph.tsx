@@ -1,35 +1,16 @@
 "use client";
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import type { GraphData } from "three-forcegraph";
-import type ThreeForceGraphType from "three-forcegraph";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { MutableRefObject } from "react";
+import type { GraphData } from "three-forcegraph";
 import * as THREE from "three";
 import { MeshLineGeometry, MeshLineMaterial } from "meshline";
 import { OrbitControls as ThreeOrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
-
-export type GraphNode = {
-  id: string;
-  type: "root" | "directory" | "file";
-  parent?: string;
-  x?: number;
-  y?: number;
-  z?: number;
-};
-
-export type GraphLink = {
-  source: string;
-  target: string;
-  type: "hierarchy" | "mesh";
-};
-
-type RepoGraphProps = {
-  data: GraphData<GraphNode, GraphLink> | null;
-};
+import type { ForceGraphInstance, GraphLink, GraphNode, RepoGraphProps } from "../../lib/types";
 
 const palette = {
   root: new THREE.Color("#9efeff"),
@@ -196,8 +177,6 @@ function updateLinkObject(
     position.needsUpdate = true;
   }
 }
-
-type ForceGraphInstance = ThreeForceGraphType<GraphNode, GraphLink>;
 
 function ForceGraphPrimitive({ data }: { data: GraphData<GraphNode, GraphLink> }) {
   const [forceGraph, setForceGraph] = useState<ForceGraphInstance | null>(null);

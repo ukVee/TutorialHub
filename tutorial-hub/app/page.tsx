@@ -2,18 +2,21 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import GitHubStats from "./components/landing/GitHubStats";
-import GistGrid from "./components/landing/GistGrid";
-import ApologyMessage from "./components/landing/ApologyMessage";
-import GlitchOverlay from "./components/landing/GlitchOverlay";
-import CompositeGlitchScene from "./components/landing/CompositeGlitchScene";
-import GitHubScripts from "./components/landing/GitHubScripts";
-import { UserSettings, defaultSettings, getSettings, saveSettings } from "./lib/settings";
-import SplashGate from "./components/splash/SplashGate";
-import NeuralMesh from "./components/terminal/NeuralMesh";
-import MockTerminal from "./components/terminal/MockTerminal";
 
-type Mode = "HOME" | "GLITCH" | "TERMINAL";
+import {
+  GitHubStats,
+  GistGrid,
+  ApologyMessage,
+  GlitchOverlay,
+  CompositeGlitchScene,
+  GitHubScripts,
+  SplashGate,
+  NeuralMesh,
+  MockTerminal
+} from "./components";
+
+import { defaultSettings, getSettings, saveSettings } from "./lib/settings";
+import type { Mode, UserSettings } from "./lib/types";
 
 const GLITCH_OFFSET_AFTER_SPLASH_MS = 2000;
 // Glitch now has 4 stages; keep overall window in sync with slices.
@@ -25,23 +28,26 @@ const POST_SPLASH_TOTAL_MS = 4400; // matches SplashGate run + fade
 
 export default function Home() {
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
+  const [settingsReady, setSettingsReady] = useState(false);
   const [glitchActive, setGlitchActive] = useState(false);
   const [showApology, setShowApology] = useState(false);
   const [mode, setMode] = useState<Mode>("HOME");
   const [splashDone, setSplashDone] = useState(false);
-  const [sequenceStarted, setSequenceStarted] = useState(false);
   const [showPostSplash, setShowPostSplash] = useState(false);
   const [terminalScript, setTerminalScript] = useState<{ at: number; line: string }[]>([]);
   const [terminalScriptKey, setTerminalScriptKey] = useState(0);
   const timersRef = useRef<number[]>([]);
+  const sequenceStartedRef = useRef(false);
 
   const router = useRouter();
 
-  // Load settings once.
   useEffect(() => {
+    if (typeof window === "undefined") return;
     const stored = getSettings();
-    console.log("[Home] settings loaded", stored);
-    setSettings(stored);
+    requestAnimationFrame(() => {
+      setSettings(stored);
+      setSettingsReady(true);
+    });
   }, []);
 
   // Clear any outstanding timers on unmount.
@@ -54,16 +60,19 @@ export default function Home() {
 
   // Drive first-visit sequence once per visitor.
   useEffect(() => {
-    console.log("[Home] sequence effect run", { splashDone, sequenceStarted, displayGlitch: settings.displayGlitch });
+    console.log("[Home] sequence effect run", { splashDone, started: sequenceStartedRef.current, displayGlitch: settings.displayGlitch, settingsReady });
     if (!splashDone) return;
-    if (sequenceStarted) return;
-    if (!settings.displayGlitch) return;
+    if (!settingsReady) return;
+    if (sequenceStartedRef.current) return;
+
+    const shouldRunGlitch = settings.displayGlitch;
+    sequenceStartedRef.current = true;
+    if (!shouldRunGlitch) return;
 
     console.log("[Home] starting sequence after splash");
-    setSequenceStarted(true);
-    const updated = { ...settings, displayGlitch: true };
+    const updated = { ...settings, displayGlitch: false };
     saveSettings(updated);
-    setSettings(updated);
+    requestAnimationFrame(() => setSettings(updated));
     console.log("[Home] displayGlitch toggled off for future visits");
 
     // Wait until 2s after splash finishes, then start glitch.
@@ -117,7 +126,7 @@ export default function Home() {
     }, GLITCH_OFFSET_AFTER_SPLASH_MS);
 
     timersRef.current.push(startGlitchTimer);
-  }, [splashDone, sequenceStarted, settings.displayGlitch]);
+  }, [splashDone, settings, settingsReady]);
 
   if (mode === "TERMINAL") {
     return (

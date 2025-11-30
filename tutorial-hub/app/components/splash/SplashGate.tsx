@@ -3,38 +3,20 @@
 import { useEffect, useRef, useState } from "react";
 import GameOfLifeCanvas from "./GameOfLifeCanvas";
 
-type SplashGateProps = {
-  children: React.ReactNode;
-  onComplete?: () => void;
-  debugLabel?: string;
-};
+import type { SplashGateProps } from "../../lib/types";
 
 const RUN_DURATION_MS = 4000;
 const FADE_DURATION_MS = 400;
 
 export default function SplashGate({ children, onComplete, debugLabel = "SplashGate" }: SplashGateProps) {
-  const [isSplashVisible, setIsSplashVisible] = useState(false);
+  const [isSplashVisible, setIsSplashVisible] = useState<boolean>(true);
   const [isFading, setIsFading] = useState(false);
   const timersRef = useRef<number[]>([]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-
-    let disableSplash = false;
-
-    try {
-      disableSplash = sessionStorage.getItem("splashSeen") === "1";
-    } catch {
-      disableSplash = false;
-    }
-
-    try {
-      sessionStorage.setItem("splashSeen", "1");
-    } catch {
-      // Continue without storage if access fails.
-    }
-    setIsSplashVisible(true);
-    console.log(`[${debugLabel}] splash visible (disableSplash=${disableSplash})`);
+    requestAnimationFrame(() => setIsSplashVisible(true));
+    console.log(`[${debugLabel}] splash visible`);
 
     // Trigger fade then remove after the animation completes.
     const fadeTimer = window.setTimeout(() => {
@@ -53,7 +35,7 @@ export default function SplashGate({ children, onComplete, debugLabel = "SplashG
       timersRef.current.forEach((timer) => window.clearTimeout(timer));
       timersRef.current = [];
     };
-  }, []);
+  }, [debugLabel, onComplete]);
 
   return (
     <>

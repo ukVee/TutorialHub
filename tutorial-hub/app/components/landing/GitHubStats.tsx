@@ -1,21 +1,13 @@
 "use client";
+/* eslint-disable @next/next/no-img-element */
 
 import { useEffect, useState } from "react";
-
-type Stats = {
-  login: string;
-  name: string | null;
-  avatar_url: string;
-  bio: string | null;
-  public_repos: number;
-  followers: number;
-  following: number;
-};
+import type { GitHubUserStats } from "../../lib/types";
 
 const GH_USER = process.env.NEXT_PUBLIC_GITHUB_USERNAME || "ukvee";
 
 export default function GitHubStats() {
-  const [stats, setStats] = useState<Stats | null>(null);
+  const [stats, setStats] = useState<GitHubUserStats | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -27,7 +19,7 @@ export default function GitHubStats() {
           headers: { Accept: "application/vnd.github+json" },
         });
         if (!res.ok) throw new Error(`Status ${res.status}`);
-        const data = (await res.json()) as Stats;
+        const data = (await res.json()) as GitHubUserStats;
         if (!cancelled) setStats(data);
       } catch (err) {
         if (!cancelled) setError("GitHub is shy right now (rate limit or offline).");

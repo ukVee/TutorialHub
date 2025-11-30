@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { Gist } from "../../lib/types";
 
-type Gist = {
+type GitHubGist = {
   id: string;
-  description: string;
-  files: string[];
+  description: string | null;
+  files: Record<string, unknown>;
   created_at: string;
-  url: string;
+  html_url: string;
 };
 
 const GH_USER = process.env.NEXT_PUBLIC_GITHUB_USERNAME || "ukvee";
@@ -26,7 +27,7 @@ export default function GistGrid() {
           headers: { Accept: "application/vnd.github+json" },
         });
         if (!res.ok) throw new Error(`Status ${res.status}`);
-        const data = (await res.json()) as any[];
+        const data = (await res.json()) as GitHubGist[];
         const simplified = data.map((gist) => ({
           id: gist.id,
           description: gist.description || "Untitled gist",

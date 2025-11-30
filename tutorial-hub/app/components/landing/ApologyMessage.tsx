@@ -1,10 +1,8 @@
 "use client";
 
-type Props = {
-  show: boolean;
-};
+import type { ApologyMessageProps } from "../../lib/types";
 
-export default function ApologyMessage({ show }: Props) {
+export default function ApologyMessage({ show }: ApologyMessageProps) {
   if (!show) return null;
 
   return (

@@ -1,39 +1,61 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import RepoGraph, { type GraphLink, type GraphNode } from "../components/RepoGraph";
+import { useEffect, useMemo, useState } from "react";
+import RepoGraph from "../components/visualizer/RepoGraph";
+import type { GraphLink, GraphNode, GraphPayload } from "../lib/types";
 
-type GraphPayload = {
-  nodes: GraphNode[];
-  links: GraphLink[];
-};
+type TreeEntry = { path?: string; type?: "blob" | "tree" };
+
+const OWNER = "ukvee";
+const REPO = "TutorialHub";
 
 export default function VisualizerPage() {
   const [graph, setGraph] = useState<GraphPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const githubHeaders = useMemo(
+    () => ({ Accept: "application/vnd.github+json" }),
+    []
+  );
+
   useEffect(() => {
     let cancelled = false;
-    (async () => {
+
+    const loadGraph = async () => {
       try {
-        const basePath = process.env.NODE_ENV === "production" ? "/TutorialHub" : "";
-        const response = await fetch(`${basePath}/api/github/repo`, { cache: "force-cache" });
-        if (!response.ok) {
-          throw new Error(`Request failed: ${response.status}`);
-        }
-        const payload: GraphPayload = await response.json();
-        if (!cancelled) setGraph(payload);
+        const repoRes = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}`, {
+          headers: githubHeaders,
+        });
+        if (!repoRes.ok) throw new Error(`Repo request failed: ${repoRes.status}`);
+        const repoJson: { default_branch?: string } = await repoRes.json();
+        const branch = repoJson.default_branch || "main";
+
+        const treeRes = await fetch(
+          `https://api.github.com/repos/${OWNER}/${REPO}/git/trees/${branch}?recursive=1`,
+          { headers: githubHeaders }
+        );
+        if (!treeRes.ok) throw new Error(`Tree request failed: ${treeRes.status}`);
+        const treeJson: { tree?: TreeEntry[] } = await treeRes.json();
+        const entries =
+          treeJson.tree?.map((entry) => ({
+            path: entry.path ?? "",
+            type: entry.type,
+          })) ?? [];
+
+        const built = buildGraph(entries);
+        if (!cancelled) setGraph(built);
       } catch (err: unknown) {
-        if (!cancelled) {
-          const message = err instanceof Error ? err.message : "Unable to load repository graph";
-          setError(message);
-        }
+        if (cancelled) return;
+        const message = err instanceof Error ? err.message : "Unable to load repository graph";
+        setError(message);
       }
-    })();
+    };
+
+    loadGraph();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [githubHeaders]);
 
   return (
     <div className="relative min-h-screen bg-black text-slate-100">
@@ -51,4 +73,71 @@ export default function VisualizerPage() {
       )}
     </div>
   );
+}
+
+function buildGraph(entries: Array<{ path: string; type?: "blob" | "tree" }>): GraphPayload {
+  const rootId = `${OWNER}/${REPO}`;
+  const nodes: GraphNode[] = [{ id: rootId, type: "root" }];
+  const links: GraphLink[] = [];
+  const nodeMap = new Map<string, GraphNode>([[rootId, nodes[0]]]);
+  const dirToFiles = new Map<string, string[]>();
+
+  const addNode = (id: string, type: GraphNode["type"], parent?: string) => {
+    if (nodeMap.has(id)) return;
+    const node: GraphNode = parent ? { id, type, parent } : { id, type };
+    nodeMap.set(id, node);
+    nodes.push(node);
+    if (parent) {
+      links.push({ source: parent, target: id, type: "hierarchy" });
+    }
+  };
+
+  const ensureDirChain = (fullPath: string) => {
+    if (!fullPath) return rootId;
+    const segments = fullPath.split("/").filter(Boolean);
+    let currentParent = rootId;
+    segments.forEach((_, idx) => {
+      const id = segments.slice(0, idx + 1).join("/");
+      addNode(id, "directory", idx === 0 ? rootId : segments.slice(0, idx).join("/"));
+      currentParent = id;
+    });
+    return currentParent;
+  };
+
+  for (const entry of entries) {
+    const cleanedPath = entry.path.replace(/^\//, "");
+    if (!cleanedPath) continue;
+
+    const parentPath = cleanedPath.includes("/")
+      ? cleanedPath.slice(0, cleanedPath.lastIndexOf("/"))
+      : "";
+
+    const parentId = ensureDirChain(parentPath);
+
+    if (entry.type === "tree") {
+      addNode(cleanedPath, "directory", parentId || rootId);
+      continue;
+    }
+
+    if (entry.type === "blob") {
+      addNode(cleanedPath, "file", parentId || rootId);
+      if (!dirToFiles.has(parentId)) dirToFiles.set(parentId, []);
+      dirToFiles.get(parentId)!.push(cleanedPath);
+    }
+  }
+
+  const meshSeen = new Set<string>();
+  dirToFiles.forEach((files) => {
+    for (let i = 0; i < files.length; i += 1) {
+      for (let j = i + 1; j < files.length; j += 1) {
+        const [a, b] = [files[i], files[j]];
+        const key = a < b ? `${a}|${b}` : `${b}|${a}`;
+        if (meshSeen.has(key)) continue;
+        meshSeen.add(key);
+        links.push({ source: a, target: b, type: "mesh" });
+      }
+    }
+  });
+
+  return { nodes, links };
 }

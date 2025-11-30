@@ -1,12 +1,6 @@
 "use client";
 
-export interface UserSettings {
-  displaySplash: boolean;
-  // future use
-  displayGlitch: boolean;
-  // future use
-  theme: "dark" | "light";
-}
+import type { UserSettings } from "./types";
 
 export const defaultSettings: UserSettings = {
   displaySplash: true,

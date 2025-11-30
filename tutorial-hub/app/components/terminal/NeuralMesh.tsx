@@ -1,24 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-
-type MeshNode = {
-  baseX: number;
-  baseY: number;
-  x: number;
-  y: number;
-  brightness: number;
-  phase: number;
-  velocityX: number;
-  velocityY: number;
-  spikeTimer: number;
-};
-
-type NeuralMeshProps = {
-  className?: string;
-  /** Set to 120 to allow a higher frame rate; defaults to 60fps cap. */
-  targetFps?: 60 | 120;
-};
+import { useCallback, useEffect, useRef } from "react";
+import type { MeshNode, NeuralMeshProps } from "../../lib/types";
 
 const GRID_SPACING = 120;
 const MAX_FORCE_DISTANCE = 250;
@@ -144,7 +127,7 @@ export default function NeuralMesh({ className = "", targetFps = 60 }: NeuralMes
     nodesRef.current = nodes;
   };
 
-  const spikeRandomNode = () => {
+  const spikeRandomNode = useCallback(() => {
     const nodes = nodesRef.current;
     if (!nodes.length) return;
     const pickIndex = () => Math.floor(Math.random() * nodes.length);
@@ -158,9 +141,9 @@ export default function NeuralMesh({ className = "", targetFps = 60 }: NeuralMes
       triggerSpike(pickIndex(), 3.4);
       chainProb = 0.25;
     }
-  };
+  }, []);
 
-  const shakeAllNodes = (now: number) => {
+  const shakeAllNodes = useCallback((now: number) => {
     const nodes = nodesRef.current;
     if (!nodes.length) return;
     nodes.forEach((n) => {
@@ -168,7 +151,7 @@ export default function NeuralMesh({ className = "", targetFps = 60 }: NeuralMes
       n.velocityY += (Math.random() - 0.5) * 2;
     });
     shakeWindowRef.current = { active: true, until: now + SHAKE_DURATION };
-  };
+  }, []);
 
   useEffect(() => {
     const handleSpike = () => spikeRandomNode();
@@ -181,10 +164,10 @@ export default function NeuralMesh({ className = "", targetFps = 60 }: NeuralMes
       window.removeEventListener("terminal-spike", handleSpike);
       window.removeEventListener("terminal-shake", handleShake);
     };
-  }, []);
+  }, [shakeAllNodes, spikeRandomNode]);
 
   const triggerSpike = (index: number, impulseScale = 1) => {
-    const { cols, rows } = gridRef.current;
+    const { cols } = gridRef.current;
     const nodes = nodesRef.current;
     if (!nodes.length) return;
 

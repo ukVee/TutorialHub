@@ -2,12 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { RepoFile, getFileContent, listRepoFiles } from "../../lib/githubClient";
-
-type FileState = {
-  loading: boolean;
-  content?: string;
-  error?: string;
-};
+import type { FileState } from "../../lib/types";
 
 export default function GitHubScripts() {
   const [files, setFiles] = useState<RepoFile[]>([]);
@@ -20,8 +15,9 @@ export default function GitHubScripts() {
       try {
         const list = await listRepoFiles("");
         setFiles(list);
-      } catch (err: any) {
-        setError(err?.message || "Failed to load repository files.");
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : "Failed to load repository files.";
+        setError(message);
       } finally {
         setLoading(false);
       }
@@ -54,10 +50,11 @@ export default function GitHubScripts() {
         ...prev,
         [path]: { loading: false, content },
       }));
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Unable to fetch file.";
       setFileStates((prev) => ({
         ...prev,
-        [path]: { loading: false, error: err?.message || "Unable to fetch file." },
+        [path]: { loading: false, error: message },
       }));
     }
   };
@@ -78,7 +75,6 @@ export default function GitHubScripts() {
     <div className="grid gap-4 sm:grid-cols-2">
       {files.map((file) => {
         const state = fileStates[file.path];
-        const isOpen = Boolean(state?.content);
 
         return (
           <div key={file.path} className="gist-card">

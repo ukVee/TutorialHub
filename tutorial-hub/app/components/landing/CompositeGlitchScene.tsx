@@ -4,15 +4,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import NeuralMesh from "../terminal/NeuralMesh";
 import MockTerminal from "../terminal/MockTerminal";
 
-type Props = {
-  active: boolean;
-  terminalScript?: { at: number; line: string }[];
-  terminalScriptKey?: string | number;
-};
+import type { CompositeGlitchSceneProps } from "../../lib/types";
 
 const SLICE_INTERVAL_MS = 150;
 
-export default function CompositeGlitchScene({ active, terminalScript, terminalScriptKey }: Props) {
+export default function CompositeGlitchScene({ active, terminalScript, terminalScriptKey }: CompositeGlitchSceneProps) {
   const [visibleCount, setVisibleCount] = useState(0);
   const [visible, setVisible] = useState(false);
   const timersRef = useRef<number[]>([]);
@@ -36,13 +32,17 @@ export default function CompositeGlitchScene({ active, terminalScript, terminalS
     timersRef.current = [];
 
     if (!active) {
-      setVisible(false);
-      setVisibleCount(0);
+      requestAnimationFrame(() => {
+        setVisible(false);
+        setVisibleCount(0);
+      });
       return;
     }
 
-    setVisible(true);
-    setVisibleCount(1);
+    requestAnimationFrame(() => {
+      setVisible(true);
+      setVisibleCount(1);
+    });
 
     for (let i = 1; i < slices.length; i += 1) {
       const t = window.setTimeout(() => setVisibleCount(i + 1), SLICE_INTERVAL_MS * i);

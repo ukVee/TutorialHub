@@ -1,27 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-
-type GameOfLifeCanvasProps = {
-  runDurationMs?: number;
-  className?: string;
-};
-
-type Point = { x: number; y: number };
-
-type Phase = "toSeven" | "holdSeven" | "toWord" | "holdWord";
-
-type Particle = {
-  id: number;
-  x: number;
-  y: number;
-  sourceX: number;
-  sourceY: number;
-  targetX: number;
-  targetY: number;
-  size: number;
-  delay: number;
-};
+import type { GameOfLifeCanvasProps, Particle, Phase, Point } from "../../lib/types";
 
 const DEFAULT_RUN = 4000;
 const MIN_PARTICLES = 800;
@@ -58,6 +38,51 @@ export default function GameOfLifeCanvas({
     holdWord: 0,
     total: 0,
   });
+
+  function drawFrame(timestamp: number) {
+    const ctx = ctxRef.current;
+    const particles = particlesRef.current;
+    const { width, height } = viewportRef.current;
+    if (!ctx || !width || !height) return;
+
+    ctx.fillStyle = "#000000";
+    ctx.fillRect(0, 0, width, height);
+
+    const phase = phaseRef.current;
+    const phaseProgress = clamp(
+      (timestamp - phase.startedAt) / (phase.duration || 1),
+      0,
+      1
+    );
+
+    const hueBase = 278;
+
+    for (let i = 0; i < particles.length; i++) {
+      const p = particles[i];
+      const t = applyDelay(phaseProgress, p.delay);
+      const eased = easeInOutCubic(t);
+
+      const isHold = phase.current === "holdSeven" || phase.current === "holdWord";
+
+      if (isHold) {
+        // Keep particles at target with subtle shimmer.
+        const wobble =
+          Math.sin((timestamp * 0.004 + p.id * 13) * 0.8) * 0.6 +
+          Math.cos((timestamp * 0.002 + p.id * 7) * 0.6) * 0.4;
+        p.x = p.targetX + wobble;
+        p.y = p.targetY + wobble * 0.5;
+      } else {
+        p.x = lerp(p.sourceX, p.targetX, eased);
+        p.y = lerp(p.sourceY, p.targetY, eased);
+      }
+
+      const brightness = 60 + eased * 35;
+      const alpha = 0.7 + eased * 0.3;
+      ctx.fillStyle = `hsla(${hueBase - p.delay * 40}, 95%, ${brightness}%, ${alpha})`;
+      const size = p.size * (isHold ? 1.05 : 1);
+      ctx.fillRect(p.x - size / 2, p.y - size / 2, size, size);
+    }
+  }
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -204,51 +229,6 @@ export default function GameOfLifeCanvas({
       window.removeEventListener("resize", resizeCanvas);
     };
   }, [runDurationMs]);
-
-  const drawFrame = (timestamp: number) => {
-    const ctx = ctxRef.current;
-    const particles = particlesRef.current;
-    const { width, height } = viewportRef.current;
-    if (!ctx || !width || !height) return;
-
-    ctx.fillStyle = "#000000";
-    ctx.fillRect(0, 0, width, height);
-
-    const phase = phaseRef.current;
-    const phaseProgress = clamp(
-      (timestamp - phase.startedAt) / (phase.duration || 1),
-      0,
-      1
-    );
-
-    const hueBase = 278;
-
-    for (let i = 0; i < particles.length; i++) {
-      const p = particles[i];
-      const t = applyDelay(phaseProgress, p.delay);
-      const eased = easeInOutCubic(t);
-
-      const isHold = phase.current === "holdSeven" || phase.current === "holdWord";
-
-      if (isHold) {
-        // Keep particles at target with subtle shimmer.
-        const wobble =
-          Math.sin((timestamp * 0.004 + p.id * 13) * 0.8) * 0.6 +
-          Math.cos((timestamp * 0.002 + p.id * 7) * 0.6) * 0.4;
-        p.x = p.targetX + wobble;
-        p.y = p.targetY + wobble * 0.5;
-      } else {
-        p.x = lerp(p.sourceX, p.targetX, eased);
-        p.y = lerp(p.sourceY, p.targetY, eased);
-      }
-
-      const brightness = 60 + eased * 35;
-      const alpha = 0.7 + eased * 0.3;
-      ctx.fillStyle = `hsla(${hueBase - p.delay * 40}, 95%, ${brightness}%, ${alpha})`;
-      const size = p.size * (isHold ? 1.05 : 1);
-      ctx.fillRect(p.x - size / 2, p.y - size / 2, size, size);
-    }
-  };
 
   return <canvas ref={canvasRef} className={`gol-canvas ${className}`} />;
 }

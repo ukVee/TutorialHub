@@ -1,16 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
-type Props = {
-  active: boolean;
-};
+import type { GlitchOverlayProps } from "../../lib/types";
 
 // Align with 4-stage glitch slices (~800-1000ms total).
 const RUN_MIN = 900;
 const RUN_MAX = 1100;
 
-export default function GlitchOverlay({ active }: Props) {
+export default function GlitchOverlay({ active }: GlitchOverlayProps) {
   const [visible, setVisible] = useState(false);
   const [runId, setRunId] = useState(0);
 
@@ -19,8 +16,10 @@ export default function GlitchOverlay({ active }: Props) {
       return;
     }
 
-    setRunId((prev) => prev + 1);
-    setVisible(true);
+    requestAnimationFrame(() => {
+      setRunId((prev) => prev + 1);
+      setVisible(true);
+    });
 
     const duration = RUN_MIN + Math.random() * (RUN_MAX - RUN_MIN);
     const timer = window.setTimeout(() => setVisible(false), duration);

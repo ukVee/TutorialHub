@@ -1,13 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
-
-type MockTerminalProps = {
-  className?: string;
-  script?: { at: number; line: string }[];
-  scriptKey?: string | number;
-  greet?: boolean;
-};
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import type { MockTerminalProps } from "../../lib/types";
 
 const IDLE_MIN = 20000;
 const IDLE_MAX = 40000;
@@ -63,6 +57,47 @@ Available commands:
     []
   );
 
+  const appendHistory = useCallback((line: string) => {
+    setHistory((prev) => {
+      const next = [...prev, line].slice(-MAX_HISTORY);
+      return next;
+    });
+  }, []);
+
+  const focusInput = useCallback(() => {
+    containerRef.current?.focus();
+  }, []);
+
+  const scrollToBottom = useCallback(() => {
+    const el = logRef.current;
+    if (!el) return;
+    el.scrollTop = el.scrollHeight;
+  }, []);
+
+  const scheduleIdleLog = useCallback(function scheduleIdleLogInner() {
+    if (idleTimerRef.current) window.clearTimeout(idleTimerRef.current);
+    const delay = randomRange(IDLE_MIN, IDLE_MAX);
+    idleTimerRef.current = window.setTimeout(() => {
+      const generator = idleGenerators[Math.floor(Math.random() * idleGenerators.length)];
+      appendHistory(generator());
+      scheduleIdleLogInner();
+    }, delay);
+  }, [appendHistory, idleGenerators]);
+
+  const executeCommand = useCallback(
+    (command: string) => {
+      const handler = commands[command];
+      if (!handler) {
+        appendHistory(`[error] unknown command: ${command}`);
+        return;
+      }
+
+      const output = handler();
+      if (output) appendHistory(output);
+    },
+    [appendHistory, commands]
+  );
+
   useEffect(() => {
     focusInput();
     scheduleIdleLog();
@@ -71,11 +106,11 @@ Available commands:
       scriptTimersRef.current.forEach((t) => window.clearTimeout(t));
       scriptTimersRef.current = [];
     };
-  }, []);
+  }, [focusInput, scheduleIdleLog]);
 
   useEffect(() => {
     requestAnimationFrame(scrollToBottom);
-  }, [history]);
+  }, [history, scrollToBottom]);
 
   // Run scripted lines (used by glitch/terminal sequence)
   useEffect(() => {
@@ -83,7 +118,6 @@ Available commands:
     scriptTimersRef.current = [];
     if (!script?.length) return;
 
-    const start = performance.now();
     script.forEach(({ at, line }) => {
       const timer = window.setTimeout(() => appendHistory(line), Math.max(0, at));
       scriptTimersRef.current.push(timer);
@@ -93,45 +127,7 @@ Available commands:
       scriptTimersRef.current.forEach((t) => window.clearTimeout(t));
       scriptTimersRef.current = [];
     };
-  }, [script, scriptKey]);
-
-  const focusInput = () => {
-    containerRef.current?.focus();
-  };
-
-  const scrollToBottom = () => {
-    const el = logRef.current;
-    if (!el) return;
-    el.scrollTop = el.scrollHeight;
-  };
-
-  const scheduleIdleLog = () => {
-    if (idleTimerRef.current) window.clearTimeout(idleTimerRef.current);
-    const delay = randomRange(IDLE_MIN, IDLE_MAX);
-    idleTimerRef.current = window.setTimeout(() => {
-      const generator = idleGenerators[Math.floor(Math.random() * idleGenerators.length)];
-      appendHistory(generator());
-      scheduleIdleLog();
-    }, delay);
-  };
-
-  const appendHistory = (line: string) => {
-    setHistory((prev) => {
-      const next = [...prev, line].slice(-MAX_HISTORY);
-      return next;
-    });
-  };
-
-  const executeCommand = (command: string) => {
-    const handler = commands[command];
-    if (!handler) {
-      appendHistory(`[error] unknown command: ${command}`);
-      return;
-    }
-
-    const output = handler();
-    if (output) appendHistory(output);
-  };
+  }, [appendHistory, script, scriptKey]);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     e.preventDefault();
