@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import RepoGraph, { type GraphLink, type GraphNode } from "@/components/RepoGraph";
+import RepoGraph, { type GraphLink, type GraphNode } from "../components/RepoGraph";
 
 type GraphPayload = {
   nodes: GraphNode[];

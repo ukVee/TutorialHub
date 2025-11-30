@@ -7,10 +7,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { MutableRefObject } from "react";
 import * as THREE from "three";
 import { MeshLineGeometry, MeshLineMaterial } from "meshline";
-import { OrbitControls as ThreeOrbitControls } from "three/examples/jsm/controls/OrbitControls";
-import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer";
-import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass";
-import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass";
+import { OrbitControls as ThreeOrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
+import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 
 export type GraphNode = {
   id: string;
@@ -62,7 +62,7 @@ function OrbitControls() {
 
 function BloomPass() {
   const { gl, scene, camera, size } = useThree();
-  const composer = useRef<EffectComposer>();
+  const composer = useRef<EffectComposer | null>(null);
 
   useEffect(() => {
     const effectComposer = new EffectComposer(gl);
@@ -156,14 +156,12 @@ function buildLinkObject(
     const material = new MeshLineMaterial({
       lineWidth: 0.006,
       color: palette.mesh,
-      transparent: true,
       opacity: 0.42,
-      depthTest: true,
-      depthWrite: false,
       dashArray: 0.18,
       dashRatio: 0.45,
       dashOffset: Math.random(),
-      sizeAttenuation: true,
+      resolution:new THREE.Vector2(1920, 1080),
+      sizeAttenuation: 1,
     });
     materialsStore.current.push(material);
     return new THREE.Mesh(geometry, material);
@@ -271,7 +269,10 @@ export default function RepoGraph({ data }: RepoGraphProps) {
         <ambientLight intensity={0.6} />
         <pointLight position={[30, 50, 30]} intensity={1.1} color={palette.root} />
         <pointLight position={[-40, -20, -10]} intensity={0.6} color={palette.directory} />
-        <hemisphereLight intensity={0.5} groundColor={new THREE.Color("#0b0f1a")} skyColor={new THREE.Color("#1f3b68")} />
+        <hemisphereLight
+          intensity={0.5}
+          groundColor="#0b0f1a"
+        />
 
         {data && <ForceGraphPrimitive data={data} />}
         <OrbitControls />
