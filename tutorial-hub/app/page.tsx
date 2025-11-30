@@ -7,6 +7,7 @@ import GistGrid from "./components/landing/GistGrid";
 import ApologyMessage from "./components/landing/ApologyMessage";
 import GlitchOverlay from "./components/landing/GlitchOverlay";
 import CompositeGlitchScene from "./components/landing/CompositeGlitchScene";
+import GitHubScripts from "./components/landing/GitHubScripts";
 import { UserSettings, defaultSettings, getSettings, saveSettings } from "./lib/settings";
 import SplashGate from "./components/splash/SplashGate";
 import NeuralMesh from "./components/terminal/NeuralMesh";
@@ -211,6 +212,20 @@ export default function Home() {
               </div>
               <div className="mt-4">
                 <GistGrid />
+              </div>
+            </section>
+
+            <section aria-labelledby="scripts-grid" className="pb-10">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.28em] text-slate-400">Repo</p>
+                  <h2 id="scripts-grid" className="text-2xl font-semibold text-white">
+                    i3-scripts (GitHub)
+                  </h2>
+                </div>
+              </div>
+              <div className="mt-4">
+                <GitHubScripts />
               </div>
             </section>
           </div>
