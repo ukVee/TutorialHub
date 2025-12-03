@@ -2,7 +2,9 @@
 
 import type { RepoNode } from "./types";
 
-const API_BASE = (process.env.NEXT_PUBLIC_API_BASE || "http://localhost:4000").replace(/\/?$/, "");
+const API_BASE = (process.env.NODE_ENV === "production"
+  ? "https://tutorial-hub-backend.vercel.app"
+  : "http://localhost:4000").replace(/\/?$/, "");
 const DEFAULT_REPO = "i3-scripts";
 
 type RepoContentEntry = {

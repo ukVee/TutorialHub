@@ -1,6 +1,8 @@
 "use client";
 
-const BASE = (process.env.NEXT_PUBLIC_API_BASE || "http://localhost:4000").replace(/\/+$/, "");
+const BASE = (process.env.NODE_ENV === "production"
+  ? "https://tutorial-hub-backend.vercel.app"
+  : "http://localhost:4000").replace(/\/+$/, "");
 
 export const apiUrl = (path: string) => `${BASE}${path.startsWith("/") ? path : `/${path}`}`;
 
