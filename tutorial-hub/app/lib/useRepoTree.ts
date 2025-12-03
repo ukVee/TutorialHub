@@ -39,31 +39,26 @@ export function useRepoTree() {
   }, []);
 
   const toggleFile = useCallback(async (path: string) => {
-    let action: "fetch" | "hide" | "show" | "noop" = "noop";
+    let shouldFetch = false;
 
     setFileStates((prev) => {
       const current = prev[path];
 
-      if (current?.loading) {
-        action = "noop";
-        return prev;
-      }
+      if (current?.loading) return prev;
 
       if (current?.visible) {
-        action = "hide";
         return { ...prev, [path]: { ...current, visible: false, loading: false } };
       }
 
       if (current?.content) {
-        action = "show";
         return { ...prev, [path]: { ...current, visible: true, error: undefined, loading: false } };
       }
 
-      action = "fetch";
+      shouldFetch = true;
       return { ...prev, [path]: { loading: true, error: undefined, content: undefined, visible: true } };
     });
 
-    if (action !== "fetch") return;
+    if (!shouldFetch) return;
 
     try {
       const content = await fetchWithTimeout(path);
