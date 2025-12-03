@@ -16,7 +16,18 @@ export type FileState = {
   loading: boolean;
   content?: string;
   error?: string;
+  visible?: boolean;
 };
+
+export type RepoNode = {
+  name: string;
+  path: string;
+  type: "file" | "dir";
+  size?: number;
+  children?: RepoNode[];
+};
+
+export type RepoTree = RepoNode[];
 
 export type ForceGraphInstance = ThreeForceGraphType<GraphNode, GraphLink>;
 
@@ -124,4 +135,9 @@ export type UserSettings = {
   displaySplash: boolean;
   displayGlitch: boolean;
   theme: "dark" | "light";
+};
+
+export type CarouselPage = {
+  path: string;
+  label: string;
 };

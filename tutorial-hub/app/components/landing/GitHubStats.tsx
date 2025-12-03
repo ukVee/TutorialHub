@@ -2,9 +2,8 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { useEffect, useState } from "react";
+import { apiGet } from "../../lib/api";
 import type { GitHubUserStats } from "../../lib/types";
-
-const GH_USER = process.env.NEXT_PUBLIC_GITHUB_USERNAME || "ukvee";
 
 export default function GitHubStats() {
   const [stats, setStats] = useState<GitHubUserStats | null>(null);
@@ -15,11 +14,7 @@ export default function GitHubStats() {
 
     const load = async () => {
       try {
-        const res = await fetch(`https://api.github.com/users/${GH_USER}`, {
-          headers: { Accept: "application/vnd.github+json" },
-        });
-        if (!res.ok) throw new Error(`Status ${res.status}`);
-        const data = (await res.json()) as GitHubUserStats;
+        const data = await apiGet<GitHubUserStats>("/api/github/user");
         if (!cancelled) setStats(data);
       } catch (err) {
         if (!cancelled) setError("GitHub is shy right now (rate limit or offline).");

@@ -9,7 +9,6 @@ import {
   ApologyMessage,
   GlitchOverlay,
   CompositeGlitchScene,
-  GitHubScripts,
   SplashGate,
   NeuralMesh,
   MockTerminal
@@ -224,19 +223,6 @@ export default function Home() {
               </div>
             </section>
 
-            <section aria-labelledby="scripts-grid" className="pb-10">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.28em] text-slate-400">Repo</p>
-                  <h2 id="scripts-grid" className="text-2xl font-semibold text-white">
-                    i3-scripts (GitHub)
-                  </h2>
-                </div>
-              </div>
-              <div className="mt-4">
-                <GitHubScripts />
-              </div>
-            </section>
           </div>
         </main>
       </SplashGate>

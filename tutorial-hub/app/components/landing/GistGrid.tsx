@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { apiGet } from "../../lib/api";
 import type { Gist } from "../../lib/types";
 
 type GitHubGist = {
@@ -10,8 +11,6 @@ type GitHubGist = {
   created_at: string;
   html_url: string;
 };
-
-const GH_USER = process.env.NEXT_PUBLIC_GITHUB_USERNAME || "ukvee";
 
 export default function GistGrid() {
   const [gists, setGists] = useState<Gist[]>([]);
@@ -23,11 +22,7 @@ export default function GistGrid() {
 
     const load = async () => {
       try {
-        const res = await fetch(`https://api.github.com/users/${GH_USER}/gists`, {
-          headers: { Accept: "application/vnd.github+json" },
-        });
-        if (!res.ok) throw new Error(`Status ${res.status}`);
-        const data = (await res.json()) as GitHubGist[];
+        const data = await apiGet<GitHubGist[]>("/api/github/gists");
         const simplified = data.map((gist) => ({
           id: gist.id,
           description: gist.description || "Untitled gist",

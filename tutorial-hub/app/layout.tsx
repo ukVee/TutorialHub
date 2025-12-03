@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Fira_Code, Fira_Mono } from "next/font/google";
 import "./globals.css";
+import { CarouselNav } from "./components/CarouselNav";
 
 const firacode = Fira_Code({
   subsets: ['latin'],
@@ -28,6 +29,7 @@ export default function RootLayout({
       <body
         className={`${firacode.variable} ${firamono.variable} antialiased`}
       >
+        <CarouselNav />
         {children}
       </body>
     </html>
