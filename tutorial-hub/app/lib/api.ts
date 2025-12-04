@@ -50,6 +50,12 @@ const directoryUrl = (repo: string, path?: string) => {
   return `${apiUrl(`/api/github/repos/${encodedRepo}/contents`)}${query}`;
 };
 
+const fileUrl = (repo: string, path: string) => {
+  const encodedRepo = encodeURIComponent(repo);
+  const query = `?filepath=${encodeURIComponent(path)}`;
+  return `${apiUrl(`/api/github/repos/${encodedRepo}/file`)}${query}`;
+};
+
 async function fetchDirectory(repo: string, path = "", signal?: AbortSignal): Promise<RepoContentEntry[]> {
   const res = await fetch(directoryUrl(repo, path || undefined), {
     cache: "no-store",
@@ -62,20 +68,6 @@ async function fetchDirectory(repo: string, path = "", signal?: AbortSignal): Pr
     throw new Error(`Expected directory listing for ${path || "/"}`);
   }
   return data as RepoContentEntry[];
-}
-
-async function fetchFile(repo: string, path: string, signal?: AbortSignal): Promise<RepoContentEntry> {
-  const res = await fetch(directoryUrl(repo, path), {
-    cache: "no-store",
-    signal,
-    headers: { Accept: "application/json" },
-  });
-  await assertOk(res, `Fetch file ${path}`);
-  const data = await res.json();
-  if (Array.isArray(data)) {
-    throw new Error(`Path ${path} resolved to a directory, expected file`);
-  }
-  return data as RepoContentEntry;
 }
 
 export async function listRepoTree(repo: string = DEFAULT_REPO): Promise<RepoNode[]> {
@@ -130,12 +122,22 @@ export async function listRepoTree(repo: string = DEFAULT_REPO): Promise<RepoNod
 }
 
 export async function getFileContent(path: string, signal?: AbortSignal, repo: string = DEFAULT_REPO): Promise<string> {
-  const entry = await fetchFile(repo, path, signal);
+  const res = await fetch(fileUrl(repo, path), {
+    cache: "no-store",
+    signal,
+    headers: { Accept: "text/plain" },
+  });
 
-  if (!entry.content || entry.encoding !== "base64") {
-    throw new Error(`File ${path} missing base64 content`);
+  if (!res.ok) {
+    let body: unknown = undefined;
+    try {
+      body = await res.json();
+    } catch {
+      body = await res.text();
+    }
+    const message = typeof body === "string" ? body : JSON.stringify(body);
+    throw new Error(`Fetch file ${path} failed (${res.status})${message ? `: ${message}` : ""}`);
   }
 
-  const normalized = entry.content.replace(/\n/g, "");
-  return typeof atob === "function" ? atob(normalized) : Buffer.from(normalized, "base64").toString("utf8");
+  return res.text();
 }

@@ -87,11 +87,20 @@ function ExplorerLayout({ root, fileStates, onOpenFile }: ExplorerLayoutProps) {
 
   const handleFile = (path: string) => {
     setSelected(path);
+  };
+
+  const handleToggleFile = (path: string) => {
+    const current = fileStates[path];
+    if (current?.visible) {
+      if (selected === path) setSelected(null);
+    } else {
+      setSelected(path);
+    }
     onOpenFile(path);
   };
 
   const state = selected ? fileStates[selected] : undefined;
-  const hasPreview = Boolean(selected && (state?.loading || state?.error || state?.content));
+  const hasPreview = Boolean(selected && state?.visible);
 
   return (
     <div className="explorer-layout">
@@ -101,8 +110,10 @@ function ExplorerLayout({ root, fileStates, onOpenFile }: ExplorerLayoutProps) {
           expanded={expanded}
           onToggle={toggleFolder}
           onFile={handleFile}
+          onToggleFile={handleToggleFile}
           depth={0}
           selected={selected}
+          fileStates={fileStates}
         />
       </div>
       <div className={`explorer-preview ${hasPreview ? "explorer-preview--visible" : ""}`} aria-label="File preview">
@@ -125,11 +136,13 @@ type TreeNodeProps = {
   expanded: Set<string>;
   onToggle: (path: string) => void;
   onFile: (path: string) => void;
+  onToggleFile: (path: string) => void;
   depth: number;
   selected: string | null;
+  fileStates: Record<string, FileState>;
 };
 
-function TreeNode({ node, expanded, onToggle, onFile, depth, selected }: TreeNodeProps) {
+function TreeNode({ node, expanded, onToggle, onFile, onToggleFile, depth, selected, fileStates }: TreeNodeProps) {
   const indent = depth * 16;
 
   if (node.type === "dir") {
@@ -153,15 +166,17 @@ function TreeNode({ node, expanded, onToggle, onFile, depth, selected }: TreeNod
             {sortedChildren.map((child) => (
               <TreeNode
                 key={child.path}
-                node={child}
-                expanded={expanded}
-                onToggle={onToggle}
-                onFile={onFile}
-                depth={depth + 1}
-                selected={selected}
-              />
-            ))}
-            {children.length === 0 && <p className="tree-empty">(empty)</p>}
+              node={child}
+              expanded={expanded}
+              onToggle={onToggle}
+              onFile={onFile}
+              onToggleFile={onToggleFile}
+              depth={depth + 1}
+              selected={selected}
+              fileStates={fileStates}
+            />
+          ))}
+          {children.length === 0 && <p className="tree-empty">(empty)</p>}
           </div>
         )}
       </div>
@@ -169,15 +184,39 @@ function TreeNode({ node, expanded, onToggle, onFile, depth, selected }: TreeNod
   }
 
   const isSelected = selected === node.path;
+  const state = fileStates[node.path];
+  const label = state?.visible ? "Hide" : state?.loading ? "Loading…" : "Show";
+  const onKey = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      onFile(node.path);
+    }
+  };
+
   return (
-    <button
+    <div
+      role="button"
+      tabIndex={0}
       className={`tree-row tree-row--file ${isSelected ? "tree-row--active" : ""}`}
       style={{ paddingLeft: 14 + indent }}
       onClick={() => onFile(node.path)}
+      onKeyDown={onKey}
     >
       <span className="tree-chevron" aria-hidden>•</span>
       <span className="tree-icon__glyph" aria-hidden>📄</span>
-      <span className="tree-label">{node.name}</span>
-    </button>
+      <span className="tree-label flex-1">{node.name}</span>
+      <span className="tree-row__actions">
+        <button
+          type="button"
+          className="tree-row__btn"
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleFile(node.path);
+          }}
+        >
+          {label}
+        </button>
+      </span>
+    </div>
   );
 }
