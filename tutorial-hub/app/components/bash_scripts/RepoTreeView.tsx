@@ -5,7 +5,7 @@ import type { RepoTreeViewProps, FolderProps, FileProps } from "../../lib/types"
 
 export function RepoTreeView({ tree, fileStates, onToggle }: RepoTreeViewProps) {
   return (
-    <div className="space-y-3">
+    <div className="space-y-2 text-slate-100">
       {tree.map((node) =>
         node.type === "dir" ? (
           <Folder key={node.path || node.name} node={node} depth={0} fileStates={fileStates} onToggle={onToggle} />
@@ -23,11 +23,11 @@ function Folder({ node, depth, fileStates, onToggle }: FolderProps) {
   const indent = depth ? depth * 12 : 0;
 
   return (
-    <div className="space-y-2" style={{ marginLeft: indent }}>
-      <div className="flex items-center justify-between gap-2">
+    <div className="space-y-1" style={{ marginLeft: indent }}>
+      <div className="flex items-center justify-between gap-2 pr-1">
         <button
           onClick={() => setOpen((v) => !v)}
-          className="flex items-center gap-2 rounded-md border border-slate-800/70 bg-black/40 px-3 py-2 text-left text-sm text-slate-100/90 hover:border-slate-500/80 transition"
+          className="flex items-center gap-2 rounded-lg bg-slate-900/70 px-3 py-2 text-left text-sm text-slate-100/90 ring-1 ring-slate-800/70 hover:ring-slate-500/80 transition"
         >
           <span className="text-[11px] text-slate-400">{open ? "▾" : "▸"}</span>
           <span className="font-semibold text-white">{node.name || "root"}</span>
@@ -36,7 +36,7 @@ function Folder({ node, depth, fileStates, onToggle }: FolderProps) {
       </div>
 
       {open && childCount > 0 && (
-        <div className="space-y-2">
+        <div className="space-y-1">
           {node.children?.map((child) =>
             child.type === "dir" ? (
               <Folder
@@ -73,7 +73,7 @@ function FileRow({ node, depth, state, onToggle }: FileProps) {
   const label = state?.loading ? "Loading…" : state?.visible ? "Hide" : "View";
 
   return (
-    <div className="rounded-md border border-slate-800/70 bg-black/40 p-3" style={{ marginLeft: indent }}>
+    <div className="file-row" style={{ marginLeft: indent }}>
       <div className="flex items-start justify-between gap-2">
         <div>
           <h3 className="text-sm font-semibold text-white leading-tight">{node.name}</h3>
@@ -81,7 +81,7 @@ function FileRow({ node, depth, state, onToggle }: FileProps) {
         </div>
         <button
           onClick={() => onToggle(node.path)}
-          className="rounded-full border border-slate-700 px-3 py-1 text-[12px] text-slate-100 hover:border-slate-400 transition"
+          className="file-row__btn"
         >
           {label}
         </button>
@@ -90,7 +90,7 @@ function FileRow({ node, depth, state, onToggle }: FileProps) {
       {state?.visible && state?.error && <p className="mt-2 text-xs text-rose-200">{state.error}</p>}
 
       {state?.visible && state.content && (
-        <pre className="mt-3 max-h-64 overflow-auto rounded-md bg-black/60 p-3 text-[12px] text-slate-100 whitespace-pre-wrap">
+        <pre className="file-row__preview">
 {state.content}
         </pre>
       )}
