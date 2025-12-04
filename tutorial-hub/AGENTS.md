@@ -1,7 +1,7 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-- `app/` holds the Next.js App Router: `layout.tsx`, `page.tsx`, feature folders `components/` (UI), `visualizer/` (graph), `terminal/` (terminal UI); shared helpers in `app/lib/` (`types.ts`, `githubClient.ts`, `settings.ts`, `useRepoTree.ts`).
+- `app/` holds the Next.js App Router: `layout.tsx`, `page.tsx`, feature folders `components/` (UI), `visualizer/` (graph), `terminal/` (terminal UI); shared helpers in `app/lib/` (`types.ts`, `api.ts`, `settings.ts`, `useRepoTree.ts`).
 - `public/` holds static assets (icons, manifest).
 - `Documentation/` stores design notes and wireframes.
 - `next.config.ts` sets `output: "export"` and adds a production `basePath` of `/TutorialHub` for GitHub Pages.

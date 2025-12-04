@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import type { CarouselPage } from "../lib/types";
+import type { CarouselPage, SwipeHandlers } from "../../lib/types";
 
 const PAGES: CarouselPage[] = [
   { path: "/visualizer", label: "Visualizer" },
@@ -99,11 +99,6 @@ export function CarouselNav() {
     </>
   );
 }
-
-type SwipeHandlers = {
-  onSwipeLeft: () => void;
-  onSwipeRight: () => void;
-};
 
 function useSwipeNavigation(handlers: SwipeHandlers) {
   const startX = useRef<number | null>(null);

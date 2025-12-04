@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import RepoGraph from "../components/visualizer/RepoGraph";
-import { listRepoTree } from "../lib/githubClient";
-import type { GraphLink, GraphNode, GraphPayload, RepoNode } from "../lib/types";
+import { listRepoTree } from "../lib/api";
+import type { GraphEntry, GraphLink, GraphNode, GraphPayload, RepoNode } from "../lib/types";
 
 const OWNER = "ukVee";
 const REPO = "TutorialHub";
@@ -51,8 +51,6 @@ export default function VisualizerPage() {
     </div>
   );
 }
-
-type GraphEntry = { path: string; type: "blob" | "tree" };
 
 function flattenTree(nodes: RepoNode[], acc: GraphEntry[] = []): GraphEntry[] {
   for (const node of nodes) {

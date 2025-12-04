@@ -1,13 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { FileState, RepoNode, RepoTree } from "../../../lib/types";
-
-export type RepoTreeViewProps = {
-  tree: RepoTree;
-  fileStates: Record<string, FileState>;
-  onToggle: (path: string) => Promise<void> | void;
-};
+import type { RepoTreeViewProps, FolderProps, FileProps } from "../../lib/types";
 
 export function RepoTreeView({ tree, fileStates, onToggle }: RepoTreeViewProps) {
   return (
@@ -22,20 +16,6 @@ export function RepoTreeView({ tree, fileStates, onToggle }: RepoTreeViewProps) 
     </div>
   );
 }
-
-type FolderProps = {
-  node: RepoNode;
-  depth: number;
-  fileStates: Record<string, FileState>;
-  onToggle: (path: string) => Promise<void> | void;
-};
-
-type FileProps = {
-  node: RepoNode;
-  depth: number;
-  state?: FileState;
-  onToggle: (path: string) => Promise<void> | void;
-};
 
 function Folder({ node, depth, fileStates, onToggle }: FolderProps) {
   const [open, setOpen] = useState(depth === 0);

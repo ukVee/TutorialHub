@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import GameOfLifeCanvas from "./GameOfLifeCanvas";
+import SplashAnimationCanvas from "./SplashAnimationCanvas";
 
 import type { SplashGateProps } from "../../lib/types";
 
@@ -44,7 +44,7 @@ export default function SplashGate({ children, onComplete, debugLabel = "SplashG
           className={`splash-overlay ${isFading ? "splash-overlay--fade pointer-events-none" : ""}`}
           aria-hidden
         >
-          <GameOfLifeCanvas runDurationMs={RUN_DURATION_MS} />
+          <SplashAnimationCanvas runDurationMs={RUN_DURATION_MS} />
         </div>
       )}
       {children}

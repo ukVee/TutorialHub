@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Fira_Code, Fira_Mono } from "next/font/google";
 import "./globals.css";
-import { CarouselNav } from "./components/CarouselNav";
+import { CarouselNav } from "./components";
 
 const firacode = Fira_Code({
   subsets: ['latin'],

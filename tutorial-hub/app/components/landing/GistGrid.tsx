@@ -2,15 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { apiGet } from "../../lib/api";
-import type { Gist } from "../../lib/types";
-
-type GitHubGist = {
-  id: string;
-  description: string | null;
-  files: Record<string, unknown>;
-  created_at: string;
-  html_url: string;
-};
+import type { Gist, GitHubGist } from "../../lib/types";
 
 export default function GistGrid() {
   const [gists, setGists] = useState<Gist[]>([]);

@@ -1,16 +1,16 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import type { GameOfLifeCanvasProps, Particle, Phase, Point } from "../../lib/types";
+import type { SplashAnimationCanvasProps, Particle, Phase, Point } from "../../lib/types";
 
 const DEFAULT_RUN = 4000;
 const MIN_PARTICLES = 800;
 const MAX_PARTICLES = 2000;
 
-export default function GameOfLifeCanvas({
+export default function SplashAnimationCanvas({
   runDurationMs = DEFAULT_RUN,
   className = "",
-}: GameOfLifeCanvasProps) {
+}: SplashAnimationCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
   const animationRef = useRef<number | null>(null);

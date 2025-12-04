@@ -1,6 +1,6 @@
 "use client";
 
-import { RepoTreeView } from "./github/RepoTreeView";
+import { RepoTreeView } from "./RepoTreeView";
 import { useRepoTree } from "../../lib/useRepoTree";
 
 export default function GitHubScripts() {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { getFileContent, listRepoTree } from "./githubClient";
+import { getFileContent, listRepoTree } from "./api";
 import type { FileState, RepoTree } from "./types";
 
 const FILE_FETCH_TIMEOUT_MS = 10_000;

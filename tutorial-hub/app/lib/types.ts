@@ -29,9 +29,18 @@ export type RepoNode = {
 
 export type RepoTree = RepoNode[];
 
+export type RepoContentEntry = {
+  name: string;
+  path: string;
+  type: "file" | "dir" | string;
+  size?: number;
+  content?: string;
+  encoding?: string;
+};
+
 export type ForceGraphInstance = ThreeForceGraphType<GraphNode, GraphLink>;
 
-export type GameOfLifeCanvasProps = {
+export type SplashAnimationCanvasProps = {
   runDurationMs?: number;
   className?: string;
 };
@@ -42,6 +51,14 @@ export type Gist = {
   files: string[];
   created_at: string;
   url: string;
+};
+
+export type GitHubGist = {
+  id: string;
+  description: string | null;
+  files: Record<string, unknown>;
+  created_at: string;
+  html_url: string;
 };
 
 export type GitHubUserStats = {
@@ -77,6 +94,8 @@ export type GraphPayload = {
   nodes: GraphNode[];
   links: GraphLink[];
 };
+
+export type GraphEntry = { path: string; type: "blob" | "tree" };
 
 export type MeshNode = {
   baseX: number;
@@ -140,4 +159,29 @@ export type UserSettings = {
 export type CarouselPage = {
   path: string;
   label: string;
+};
+
+export type SwipeHandlers = {
+  onSwipeLeft: () => void;
+  onSwipeRight: () => void;
+};
+
+export type RepoTreeViewProps = {
+  tree: RepoTree;
+  fileStates: Record<string, FileState>;
+  onToggle: (path: string) => Promise<void> | void;
+};
+
+export type FolderProps = {
+  node: RepoNode;
+  depth: number;
+  fileStates: Record<string, FileState>;
+  onToggle: (path: string) => Promise<void> | void;
+};
+
+export type FileProps = {
+  node: RepoNode;
+  depth: number;
+  state?: FileState;
+  onToggle: (path: string) => Promise<void> | void;
 };
