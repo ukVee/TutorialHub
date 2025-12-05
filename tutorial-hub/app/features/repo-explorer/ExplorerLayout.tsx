@@ -1,99 +1,36 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { MockTerminal } from "../index";
-import { useRepoTree } from "../../lib/useRepoTree";
-import type { RepoNode, FileState } from "../../lib/types";
-import RippleLoad from "../shared/loading/RippleLoad";
+import { useMemo, useState } from "react";
+import type React from "react";
+import type { FileState, RepoExplorerState, RepoNode } from "../../lib/types";
+import RippleLoad from "../../components/loading/RippleLoad";
 
-export default function GitHubScripts() {
-  const { tree, loading, error, fileStates, toggleFile } = useRepoTree();
-  const [explorerOpen, setExplorerOpen] = useState(true);
-  const [compact, setCompact] = useState(false);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && explorerOpen) setExplorerOpen(false);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [explorerOpen]);
-
-  useEffect(() => {
-    const mql = window.matchMedia("(max-width: 600px)");
-    const handle = (e: MediaQueryListEvent | MediaQueryList) => setCompact(e.matches);
-    handle(mql);
-    mql.addEventListener("change", handle as (e: MediaQueryListEvent) => void);
-    return () => mql.removeEventListener("change", handle as (e: MediaQueryListEvent) => void);
-  }, []);
-
-  return (
-    <div className="mini-shell relative">
-      <MockTerminal
-        className="w-full h-full"
-        greet
-        onOpenExplorer={() => setExplorerOpen(true)}
-        fullSize
-      />
-
-      {explorerOpen && (
-        <div className="explorer-overlay">
-            <div className="explorer-panel">
-              <div className="explorer-bar">
-                <span className="explorer-title">file_explorer</span>
-              </div>
-              <div className="explorer-body">
-                <FileExplorerContent
-                  loading={loading}
-                  error={error}
-                tree={tree}
-                fileStates={fileStates}
-                onOpenFile={toggleFile}
-                compact={compact}
-              />
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function FileExplorerContent({
-  loading,
-  error,
-  tree,
-  fileStates,
-  onOpenFile,
-  compact = false,
-}: {
-  loading: boolean;
-  error: string | null;
-  tree: RepoNode[];
-  fileStates: Record<string, FileState>;
-  onOpenFile: (path: string) => Promise<void> | void;
+type ExplorerLayoutProps = {
+  state: RepoExplorerState;
   compact?: boolean;
-}) {
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-8">
-        <RippleLoad className="w-full max-w-2xl h-40" ariaLabel="Loading repository files" />
-      </div>
-    );
-  }
-  if (error) return <p className="text-sm text-rose-200">{error}</p>;
+  onOpenFile: (path: string) => Promise<void> | void;
+  loadingFallback?: React.ReactNode;
+};
 
+export default function ExplorerLayout({ state, compact = false, onOpenFile, loadingFallback }: ExplorerLayoutProps) {
+  const { tree, loading, error, fileStates } = state;
+
+  const virtualRoot: RepoNode = useMemo(
+    () => ({
+      name: "i3-scripts",
+      path: "i3-scripts",
+      type: "dir",
+      children: tree,
+    }),
+    [tree],
+  );
+
+  if (loading) return loadingFallback ?? null;
+  if (error) return <p className="text-sm text-rose-200">{error}</p>;
   if (!tree.length) return <p className="text-sm text-slate-200">No repository data.</p>;
 
-  const virtualRoot: RepoNode = {
-    name: "i3-scripts",
-    path: "i3-scripts",
-    type: "dir",
-    children: tree,
-  };
-
   return (
-    <ExplorerLayout
+    <ExplorerTree
       root={virtualRoot}
       fileStates={fileStates}
       onOpenFile={onOpenFile}
@@ -102,32 +39,27 @@ function FileExplorerContent({
   );
 }
 
-type ExplorerLayoutProps = {
+type ExplorerTreeProps = {
   root: RepoNode;
   fileStates: Record<string, FileState>;
   onOpenFile: (path: string) => Promise<void> | void;
   compact?: boolean;
 };
 
-function ExplorerLayout({ root, fileStates, onOpenFile, compact = false }: ExplorerLayoutProps) {
+function ExplorerTree({ root, fileStates, onOpenFile, compact = false }: ExplorerTreeProps) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set([root.path]));
   const [selected, setSelected] = useState<string | null>(null);
 
   const toggleFolder = (path: string) => {
     setExpanded((prev) => {
       const next = new Set(prev);
-      if (next.has(path)) {
-        next.delete(path);
-      } else {
-        next.add(path);
-      }
+      if (next.has(path)) next.delete(path);
+      else next.add(path);
       return next;
     });
   };
 
-  const handleFile = (path: string) => {
-    setSelected(path);
-  };
+  const handleFile = (path: string) => setSelected(path);
 
   const handleToggleFile = (path: string) => {
     const current = fileStates[path];
@@ -168,9 +100,7 @@ function ExplorerLayout({ root, fileStates, onOpenFile, compact = false }: Explo
                   <RippleLoad className="rounded-md w-full h-full" />
                 </div>
               )}
-              {state?.error && (
-                <p className="text-sm text-rose-200 py-3">{state.error}</p>
-              )}
+              {state?.error && <p className="text-sm text-rose-200 py-3">{state.error}</p>}
               {state?.content && <ContentBlock content={state.content} />}
             </div>
           )}
@@ -227,7 +157,7 @@ function TreeNode({ node, expanded, onToggle, onFile, onToggleFile, depth, selec
                 compact={compact}
               />
             ))}
-          {children.length === 0 && <p className="tree-empty">(empty)</p>}
+            {children.length === 0 && <p className="tree-empty">(empty)</p>}
           </div>
         )}
       </div>

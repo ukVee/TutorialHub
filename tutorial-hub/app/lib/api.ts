@@ -77,16 +77,18 @@ async function fetchDirectory(repo: string, path = "", signal?: AbortSignal): Pr
   return data as RepoContentEntry[];
 }
 
-export async function listRepoTree(repo: string = DEFAULT_REPO): Promise<RepoNode[]> {
+export async function listRepoTree(
+  repo: string = DEFAULT_REPO,
+  options: { signal?: AbortSignal; concurrency?: number } = {},
+): Promise<RepoNode[]> {
   const root: RepoNode = { name: "", path: "", type: "dir", children: [] };
   const queue: Array<{ node: RepoNode; path: string }> = [{ node: root, path: "" }];
+  const inFlight = new Set<Promise<void>>();
+  const concurrency = Math.max(1, Math.min(options.concurrency ?? 4, 8));
 
-  while (queue.length) {
-    const current = queue.shift();
-    if (!current) break;
+  const process = async (current: { node: RepoNode; path: string }) => {
     const { node, path } = current;
-
-    const entries = await fetchDirectory(repo, path);
+    const entries = await fetchDirectory(repo, path, options.signal);
 
     for (const entry of entries) {
       if (!entry || typeof entry !== "object") continue;
@@ -113,6 +115,20 @@ export async function listRepoTree(repo: string = DEFAULT_REPO): Promise<RepoNod
         node.children?.push(fileNode);
       }
     }
+  };
+
+  const launch = () => {
+    while (queue.length && inFlight.size < concurrency) {
+      const next = queue.shift()!;
+      const task = process(next).finally(() => inFlight.delete(task));
+      inFlight.add(task);
+    }
+  };
+
+  launch();
+  while (inFlight.size) {
+    await Promise.race(inFlight);
+    launch();
   }
 
   const sortNodes = (nodes?: RepoNode[]) => {
@@ -173,7 +189,7 @@ export async function streamFileContent(
   if (debug) console.log("stream:start", { url, timeoutMs, start: options?.start ?? 0 });
   const res = await fetch(url, {
     cache: "no-store",
-    // Intentionally no signal to avoid dev-time aborts; streaming should run to completion.
+    signal: options.signal,
     headers: { Accept: "text/plain" },
   });
 

@@ -6,9 +6,11 @@ export type ApologyMessageProps = {
   show: boolean;
 };
 
+export type TerminalScriptLine = { at: number; line: string };
+
 export type CompositeGlitchSceneProps = {
   active: boolean;
-  terminalScript?: { at: number; line: string }[];
+  terminalScript?: TerminalScriptLine[];
   terminalScriptKey?: string | number;
 };
 
@@ -113,7 +115,7 @@ export type MeshNode = {
 
 export type MockTerminalProps = {
   className?: string;
-  script?: { at: number; line: string }[];
+  script?: TerminalScriptLine[];
   scriptKey?: string | number;
   greet?: boolean;
   onOpenExplorer?: () => void;
@@ -160,6 +162,18 @@ export type UserSettings = {
   theme: "dark" | "light";
 };
 
+export type RippleTheme = {
+  live?: string;
+  trail?: string;
+};
+
+export type RippleLoadProps = {
+  className?: string;
+  speedMs?: number;
+  theme?: RippleTheme;
+  ariaLabel?: string;
+};
+
 export type CarouselPage = {
   path: string;
   label: string;
@@ -170,22 +184,13 @@ export type SwipeHandlers = {
   onSwipeRight: () => void;
 };
 
-export type RepoTreeViewProps = {
+export type RepoExplorerState = {
   tree: RepoTree;
   fileStates: Record<string, FileState>;
-  onToggle: (path: string) => Promise<void> | void;
+  loading: boolean;
+  error: string | null;
 };
 
-export type FolderProps = {
-  node: RepoNode;
-  depth: number;
-  fileStates: Record<string, FileState>;
-  onToggle: (path: string) => Promise<void> | void;
-};
-
-export type FileProps = {
-  node: RepoNode;
-  depth: number;
-  state?: FileState;
-  onToggle: (path: string) => Promise<void> | void;
+export type ExplorerCallbacks = {
+  onToggleFile: (path: string) => Promise<void> | void;
 };

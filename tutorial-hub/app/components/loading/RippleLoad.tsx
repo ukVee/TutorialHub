@@ -1,21 +1,10 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-
-type Theme = {
-  live?: string; // primary stroke color
-  trail?: string; // faded stroke color
-};
-
-type RippleLoadProps = {
-  className?: string;
-  speedMs?: number;
-  theme?: Theme;
-  ariaLabel?: string;
-};
+import type { RippleLoadProps, RippleTheme } from "../../../lib/types";
 
 // Default palette tuned to the existing neon-purple slate theme.
-const DEFAULT_THEME: Required<Theme> = {
+const DEFAULT_THEME: Required<RippleTheme> = {
   live: "#b48cff",
   trail: "rgba(124,91,255,0.45)",
 };

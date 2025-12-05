@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import NeuralMesh from "../terminal/NeuralMesh";
-import MockTerminal from "../terminal/MockTerminal";
+import NeuralMesh from "../../components/terminal/NeuralMesh";
+import MockTerminal from "../../components/terminal/MockTerminal";
 
 import type { CompositeGlitchSceneProps } from "../../lib/types";
 

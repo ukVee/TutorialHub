@@ -1,6 +1,7 @@
 "use client";
 
-import { GitHubScripts, NeuralMesh } from "../components";
+import NeuralMesh from "../components/terminal/NeuralMesh";
+import RepoExplorer from "../features/repo-explorer/RepoExplorer";
 
 export default function BashScriptsPage() {
   return (
@@ -14,7 +15,7 @@ export default function BashScriptsPage() {
         </header>
 
         <section>
-          <GitHubScripts />
+          <RepoExplorer />
         </section>
       </main>
     </div>

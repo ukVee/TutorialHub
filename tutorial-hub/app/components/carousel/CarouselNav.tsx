@@ -2,13 +2,8 @@
 
 import { useEffect, useMemo, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import type { CarouselPage, SwipeHandlers } from "../../lib/types";
-
-const PAGES: CarouselPage[] = [
-  { path: "/visualizer", label: "Visualizer" },
-  { path: "/", label: "Home" },
-  { path: "/bash_scripts", label: "Bash Scripts" },
-];
+import type { SwipeHandlers } from "../../lib/types";
+import { NAV_PAGES } from "../../lib/nav";
 
 const SWIPE_THRESHOLD = 48; // px
 
@@ -16,21 +11,21 @@ export function CarouselNav() {
   const pathname = usePathname();
   const router = useRouter();
   const activeIdx = useMemo(() => {
-    const found = PAGES.findIndex((p) => p.path === pathname);
+    const found = NAV_PAGES.findIndex((p) => p.path === pathname);
     return found === -1 ? 1 : found; // default to Home
   }, [pathname]);
 
   const move = (delta: number) => {
-    const next = (activeIdx + delta + PAGES.length) % PAGES.length;
-    router.push(PAGES[next].path);
+    const next = (activeIdx + delta + NAV_PAGES.length) % NAV_PAGES.length;
+    router.push(NAV_PAGES[next].path);
   };
 
   useSwipeNavigation({ onSwipeLeft: () => move(1), onSwipeRight: () => move(-1) });
 
   const displayDots = [
-    PAGES[(activeIdx - 1 + PAGES.length) % PAGES.length],
-    PAGES[activeIdx],
-    PAGES[(activeIdx + 1) % PAGES.length],
+    NAV_PAGES[(activeIdx - 1 + NAV_PAGES.length) % NAV_PAGES.length],
+    NAV_PAGES[activeIdx],
+    NAV_PAGES[(activeIdx + 1) % NAV_PAGES.length],
   ];
 
   const displayNames = displayDots; // same ordering: prev, current, next

@@ -15,21 +15,31 @@ export function useRepoTree() {
   const [error, setError] = useState<string | null>(null);
   const [fileStates, setFileStates] = useState<Record<string, FileState>>({});
   const progressRef = useRef<Record<string, { received: number; etag?: string | null }>>({});
+  const controllersRef = useRef<Record<string, AbortController>>({});
   const reqCounterRef = useRef(0);
 
   useEffect(() => {
+    const controller = new AbortController();
     const load = async () => {
       try {
-        const list = await listRepoTree();
+        const list = await listRepoTree(undefined, { signal: controller.signal });
+        if (controller.signal.aborted) return;
         setTree(list);
       } catch (err: unknown) {
+        if (controller.signal.aborted) return;
         const message = err instanceof Error ? err.message : "Failed to load repository files.";
         setError(message);
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
     };
     load();
+
+    return () => {
+      controller.abort("unmount");
+    };
   }, []);
 
   const toggleFile = useCallback(async (path: string) => {
@@ -44,6 +54,8 @@ export function useRepoTree() {
 
       if (current?.visible) {
         closing = true;
+        controllersRef.current[path]?.abort("user-toggle-close");
+        delete controllersRef.current[path];
         delete progressRef.current[path];
         const cleared = { ...current };
         delete (cleared as Partial<FileState> & { requestId?: string }).requestId;
@@ -58,6 +70,8 @@ export function useRepoTree() {
       Object.entries(prev).forEach(([otherPath, state]) => {
         if (otherPath !== path && state?.visible) {
           nextState[otherPath] = { ...state, visible: false, loading: false };
+          controllersRef.current[otherPath]?.abort("user-toggle-close");
+          delete controllersRef.current[otherPath];
         }
       });
 
@@ -76,6 +90,9 @@ export function useRepoTree() {
     if (closing) return;
     debug("file:proceed", { path, requestId });
 
+    const controller = new AbortController();
+    controllersRef.current[path] = controller;
+
     try {
       let content = "";
       const startOffset = progressRef.current[path]?.received ?? 0;
@@ -83,6 +100,7 @@ export function useRepoTree() {
       await streamFileContent(path, {
         start: startOffset,
         timeoutMs: 0,
+        signal: controller.signal,
         onChunk: (chunk) => {
           content += chunk;
           setFileStates((prev) => {
@@ -101,6 +119,7 @@ export function useRepoTree() {
       });
 
       delete progressRef.current[path];
+      delete controllersRef.current[path];
       debug("file:done", { path, bytes: content.length, requestId });
       setFileStates((prev) => {
         const current = prev[path];
@@ -111,6 +130,7 @@ export function useRepoTree() {
         };
       });
     } catch (err: unknown) {
+      delete controllersRef.current[path];
       const progress = progressRef.current[path];
       const isAbort = err instanceof Error && err.name === "AbortError";
       const cause = err instanceof Error ? (err as Error & { cause?: unknown }).cause : undefined;
@@ -162,6 +182,13 @@ export function useRepoTree() {
         delete progressRef.current[path];
       }
     }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      Object.values(controllersRef.current).forEach((c) => c.abort("unmount"));
+      controllersRef.current = {};
+    };
   }, []);
 
   return { tree, loading, error, fileStates, toggleFile };
