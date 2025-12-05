@@ -3,18 +3,18 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { NeuralMesh, MockTerminal } from "./components";
+import { NeuralMesh, MockTerminal } from "../components";
 import {
   GitHubStats,
   GistGrid,
   ApologyMessage,
   GlitchOverlay,
   CompositeGlitchScene
-} from "./features/homepage";
-import { SplashGate } from "./features/splash";
+} from "../features/homepage";
+import { SplashGate } from "../features/splash";
 
-import { defaultSettings, getSettings, saveSettings } from "./lib/settings";
-import type { Mode, TerminalScriptLine, UserSettings } from "./lib/types";
+import { defaultSettings, getSettings, saveSettings } from "../lib/settings";
+import type { Mode, TerminalScriptLine, UserSettings } from "../lib/types";
 
 const GLITCH_OFFSET_AFTER_SPLASH_MS = 2000;
 // Glitch now has 4 stages; keep overall window in sync with slices.

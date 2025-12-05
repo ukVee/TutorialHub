@@ -51,14 +51,6 @@ export default function RepoExplorer() {
           <div className="explorer-panel">
             <div className="explorer-bar">
               <span className="explorer-title">file_explorer</span>
-              <button
-                type="button"
-                className="explorer-close"
-                onClick={() => setExplorerOpen(false)}
-                aria-label="Close file explorer"
-              >
-                ✕
-              </button>
             </div>
             <div className="explorer-body">
               <ExplorerLayout
