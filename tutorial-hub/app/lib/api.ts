@@ -56,6 +56,13 @@ const fileUrl = (repo: string, path: string) => {
   return `${apiUrl(`/api/github/repos/${encodedRepo}/file`)}${query}`;
 };
 
+const fileStreamUrl = (repo: string, path: string, start?: number) => {
+  const encodedRepo = encodeURIComponent(repo);
+  const params = new URLSearchParams({ filepath: path });
+  if (typeof start === "number" && start > 0) params.set("start", String(start));
+  return `${apiUrl(`/api/github/repos/${encodedRepo}/file/stream`)}?${params.toString()}`;
+};
+
 async function fetchDirectory(repo: string, path = "", signal?: AbortSignal): Promise<RepoContentEntry[]> {
   const res = await fetch(directoryUrl(repo, path || undefined), {
     cache: "no-store",
@@ -140,4 +147,65 @@ export async function getFileContent(path: string, signal?: AbortSignal, repo: s
   }
 
   return res.text();
+}
+
+export type StreamProgress = {
+  receivedBytes: number;
+  etag?: string | null;
+};
+
+export async function streamFileContent(
+  path: string,
+  options: {
+    repo?: string;
+    start?: number;
+    signal?: AbortSignal;
+    onProgress?: (p: StreamProgress) => void;
+    onChunk?: (text: string) => void;
+    timeoutMs?: number;
+  } = {},
+): Promise<StreamProgress> {
+  const repo = options?.repo ?? DEFAULT_REPO;
+  const url = fileStreamUrl(repo, path, options?.start);
+  const timeoutMs = options?.timeoutMs ?? 0;
+
+  const debug = typeof process !== "undefined" && process.env.NEXT_PUBLIC_REPO_TREE_DEBUG === "1";
+  if (debug) console.log("stream:start", { url, timeoutMs, start: options?.start ?? 0 });
+  const res = await fetch(url, {
+    cache: "no-store",
+    // Intentionally no signal to avoid dev-time aborts; streaming should run to completion.
+    headers: { Accept: "text/plain" },
+  });
+
+  if (!res.ok && res.status !== 206) {
+    let body: unknown = undefined;
+    try {
+      body = await res.json();
+    } catch {
+      body = await res.text();
+    }
+    const message = typeof body === "string" ? body : JSON.stringify(body);
+    throw new Error(`Stream file ${path} failed (${res.status})${message ? `: ${message}` : ""}`);
+  }
+
+  if (!res.body) throw new Error("Readable stream not available in response");
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let received = options?.start ?? 0;
+  const etag = res.headers.get("etag");
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    received += value?.length ?? 0;
+    const text = decoder.decode(value, { stream: true });
+    if (text) options?.onChunk?.(text);
+    options?.onProgress?.({ receivedBytes: received, etag });
+  }
+
+  const tail = decoder.decode();
+  if (tail) options?.onChunk?.(tail);
+
+  return { receivedBytes: received, etag };
 }

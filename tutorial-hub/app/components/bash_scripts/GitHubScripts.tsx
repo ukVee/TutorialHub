@@ -1,30 +1,60 @@
 "use client";
 
-import { useState } from "react";
-import BashShell from "./BashShell";
+import { useEffect, useState } from "react";
+import { MockTerminal } from "../index";
 import { useRepoTree } from "../../lib/useRepoTree";
 import type { RepoNode, FileState } from "../../lib/types";
+import RippleLoad from "../shared/loading/RippleLoad";
 
 export default function GitHubScripts() {
   const { tree, loading, error, fileStates, toggleFile } = useRepoTree();
   const [explorerOpen, setExplorerOpen] = useState(true);
+  const [compact, setCompact] = useState(false);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && explorerOpen) setExplorerOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [explorerOpen]);
+
+  useEffect(() => {
+    const mql = window.matchMedia("(max-width: 600px)");
+    const handle = (e: MediaQueryListEvent | MediaQueryList) => setCompact(e.matches);
+    handle(mql);
+    mql.addEventListener("change", handle as (e: MediaQueryListEvent) => void);
+    return () => mql.removeEventListener("change", handle as (e: MediaQueryListEvent) => void);
+  }, []);
 
   return (
-    <div className="mini-shell">
-      <BashShell
+    <div className="mini-shell relative">
+      <MockTerminal
+        className="w-full h-full"
+        greet
         onOpenExplorer={() => setExplorerOpen(true)}
-        explorerOpen={explorerOpen}
-        onCloseExplorer={() => setExplorerOpen(false)}
-        explorerSlot={
-          <FileExplorerContent
-            loading={loading}
-            error={error}
-            tree={tree}
-            fileStates={fileStates}
-            onOpenFile={toggleFile}
-          />
-        }
+        fullSize
       />
+
+      {explorerOpen && (
+        <div className="explorer-overlay">
+            <div className="explorer-panel">
+              <div className="explorer-bar">
+                <span className="explorer-title">file_explorer</span>
+              </div>
+              <div className="explorer-body">
+                <FileExplorerContent
+                  loading={loading}
+                  error={error}
+                tree={tree}
+                fileStates={fileStates}
+                onOpenFile={toggleFile}
+                compact={compact}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -35,14 +65,22 @@ function FileExplorerContent({
   tree,
   fileStates,
   onOpenFile,
+  compact = false,
 }: {
   loading: boolean;
   error: string | null;
   tree: RepoNode[];
   fileStates: Record<string, FileState>;
   onOpenFile: (path: string) => Promise<void> | void;
+  compact?: boolean;
 }) {
-  if (loading) return <p className="text-sm text-slate-200">Loading repository files…</p>;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <RippleLoad className="w-full max-w-2xl h-40" ariaLabel="Loading repository files" />
+      </div>
+    );
+  }
   if (error) return <p className="text-sm text-rose-200">{error}</p>;
 
   if (!tree.length) return <p className="text-sm text-slate-200">No repository data.</p>;
@@ -59,6 +97,7 @@ function FileExplorerContent({
       root={virtualRoot}
       fileStates={fileStates}
       onOpenFile={onOpenFile}
+      compact={compact}
     />
   );
 }
@@ -67,9 +106,10 @@ type ExplorerLayoutProps = {
   root: RepoNode;
   fileStates: Record<string, FileState>;
   onOpenFile: (path: string) => Promise<void> | void;
+  compact?: boolean;
 };
 
-function ExplorerLayout({ root, fileStates, onOpenFile }: ExplorerLayoutProps) {
+function ExplorerLayout({ root, fileStates, onOpenFile, compact = false }: ExplorerLayoutProps) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set([root.path]));
   const [selected, setSelected] = useState<string | null>(null);
 
@@ -103,8 +143,8 @@ function ExplorerLayout({ root, fileStates, onOpenFile }: ExplorerLayoutProps) {
   const hasPreview = Boolean(selected && state?.visible);
 
   return (
-    <div className="explorer-layout">
-      <div className="explorer-tree" aria-label="Repository tree">
+    <div className={`explorer-layout ${compact ? "explorer-layout--compact" : ""}`}>
+      <div className={`explorer-tree ${compact ? "explorer-tree--compact" : ""}`} aria-label="Repository tree">
         <TreeNode
           node={root}
           expanded={expanded}
@@ -114,19 +154,28 @@ function ExplorerLayout({ root, fileStates, onOpenFile }: ExplorerLayoutProps) {
           depth={0}
           selected={selected}
           fileStates={fileStates}
+          compact={compact}
         />
       </div>
-      <div className={`explorer-preview ${hasPreview ? "explorer-preview--visible" : ""}`} aria-label="File preview">
-        {!hasPreview && <p className="text-sm text-slate-400">Select a file to preview.</p>}
-        {hasPreview && state?.loading && <p className="text-sm text-slate-200">Loading…</p>}
-        {hasPreview && state?.error && <p className="text-sm text-rose-200">{state.error}</p>}
-        {hasPreview && state?.content && (
-          <div className="preview-card">
-            <div className="preview-title">{selected}</div>
-            <pre className="preview-body">{state.content}</pre>
-          </div>
-        )}
-      </div>
+      {!compact && (
+        <div className={`explorer-preview ${hasPreview ? "explorer-preview--visible" : ""}`} aria-label="File preview">
+          {!hasPreview && <p className="text-sm text-slate-400">Select a file to preview.</p>}
+          {hasPreview && (
+            <div className="preview-card">
+              <div className="preview-title">{selected}</div>
+              {state?.loading && (
+                <div className="flex items-center justify-center py-6 h-[240px]">
+                  <RippleLoad className="rounded-md w-full h-full" />
+                </div>
+              )}
+              {state?.error && (
+                <p className="text-sm text-rose-200 py-3">{state.error}</p>
+              )}
+              {state?.content && <ContentBlock content={state.content} />}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -140,9 +189,10 @@ type TreeNodeProps = {
   depth: number;
   selected: string | null;
   fileStates: Record<string, FileState>;
+  compact?: boolean;
 };
 
-function TreeNode({ node, expanded, onToggle, onFile, onToggleFile, depth, selected, fileStates }: TreeNodeProps) {
+function TreeNode({ node, expanded, onToggle, onFile, onToggleFile, depth, selected, fileStates, compact = false }: TreeNodeProps) {
   const indent = depth * 16;
 
   if (node.type === "dir") {
@@ -166,16 +216,17 @@ function TreeNode({ node, expanded, onToggle, onFile, onToggleFile, depth, selec
             {sortedChildren.map((child) => (
               <TreeNode
                 key={child.path}
-              node={child}
-              expanded={expanded}
-              onToggle={onToggle}
-              onFile={onFile}
-              onToggleFile={onToggleFile}
-              depth={depth + 1}
-              selected={selected}
-              fileStates={fileStates}
-            />
-          ))}
+                node={child}
+                expanded={expanded}
+                onToggle={onToggle}
+                onFile={onFile}
+                onToggleFile={onToggleFile}
+                depth={depth + 1}
+                selected={selected}
+                fileStates={fileStates}
+                compact={compact}
+              />
+            ))}
           {children.length === 0 && <p className="tree-empty">(empty)</p>}
           </div>
         )}
@@ -194,29 +245,59 @@ function TreeNode({ node, expanded, onToggle, onFile, onToggleFile, depth, selec
   };
 
   return (
-    <div
-      role="button"
-      tabIndex={0}
-      className={`tree-row tree-row--file ${isSelected ? "tree-row--active" : ""}`}
-      style={{ paddingLeft: 14 + indent }}
-      onClick={() => onFile(node.path)}
-      onKeyDown={onKey}
-    >
-      <span className="tree-chevron" aria-hidden>•</span>
-      <span className="tree-icon__glyph" aria-hidden>📄</span>
-      <span className="tree-label flex-1">{node.name}</span>
-      <span className="tree-row__actions">
-        <button
-          type="button"
-          className="tree-row__btn"
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleFile(node.path);
-          }}
-        >
-          {label}
-        </button>
-      </span>
+    <div>
+      <div
+        role="button"
+        tabIndex={0}
+        className={`tree-row tree-row--file ${isSelected ? "tree-row--active" : ""}`}
+        style={{ paddingLeft: 14 + indent }}
+        onClick={() => {
+          onFile(node.path);
+          if (compact) onToggleFile(node.path);
+        }}
+        onKeyDown={onKey}
+      >
+        <span className="tree-chevron" aria-hidden>•</span>
+        <span className="tree-icon__glyph" aria-hidden>📄</span>
+        <span className="tree-label flex-1">{node.name}</span>
+        <span className="tree-row__actions">
+          <button
+            type="button"
+            className="tree-row__btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleFile(node.path);
+            }}
+          >
+            {label}
+          </button>
+        </span>
+      </div>
+      {compact && state?.visible && (
+        <div className="tree-inline-preview">
+          {state.loading && (
+            <div className="preview-body preview-body--inline flex items-center justify-center py-4">
+              <RippleLoad className="w-full h-[160px]" />
+            </div>
+          )}
+          {state.error && <p className="text-sm text-rose-200">{state.error}</p>}
+          {state.content && <ContentBlock content={state.content} inline />}
+        </div>
+      )}
     </div>
+  );
+}
+
+function ContentBlock({ content, inline = false }: { content: string; inline?: boolean }) {
+  const lines = content.split(/\r?\n/);
+  return (
+    <pre className={`preview-body ${inline ? "preview-body--inline" : ""}`}>
+      {lines.map((line, idx) => (
+        <div key={idx} className="preview-line">
+          <span className="preview-line__num">{idx + 1}</span>
+          <span className="preview-line__text">{line || "\u00a0"}</span>
+        </div>
+      ))}
+    </pre>
   );
 }

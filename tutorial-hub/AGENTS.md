@@ -1,37 +1,42 @@
-# Repository Guidelines
+# AGENTS.md (frontend)
 
-## Project Structure & Module Organization
-- `app/` holds the Next.js App Router: `layout.tsx`, `page.tsx`, feature folders `components/` (UI), `visualizer/` (graph), `terminal/` (terminal UI); shared helpers in `app/lib/` (`types.ts`, `api.ts`, `settings.ts`, `useRepoTree.ts`).
-- `public/` holds static assets (icons, manifest).
-- `Documentation/` stores design notes and wireframes.
-- `next.config.ts` sets `output: "export"` and adds a production `basePath` of `/TutorialHub` for GitHub Pages.
+## Scope
+- Next.js 16 App Router static export; must stay fully static (no server actions/API routes).
+- Prod basePath `/TutorialHub` set only when `NODE_ENV=production`; verify links/assets against basePath. `output: "export"`; build artifacts land in `out/`.
 
-## Build, Test, and Development Commands
-- `npm install` — install dependencies.
-- `npm run dev` — start local dev server with fast refresh.
-- `npm run build` — static export; outputs to `out/` using the production base path.
-- `npm run start` — serve the built app (after `build`).
-- `npm run lint` — run ESLint (Next.js config, Tailwind-aware).
-- `npm run deploy` — build then publish `out/` to GitHub Pages via `gh-pages` (uses `predeploy` hook).
+## Stack & Conventions
+- Node 20+, npm 10. React 19, TypeScript `strict` (no `any`). Path alias `@/* -> ./`.
+- Styling: Tailwind CSS 4 via `@tailwindcss/postcss`; globals in `app/globals.css`.
+- 3D/graph: `three`, `three-forcegraph`, `@react-three/fiber`; keep them client-side.
 
-## Coding Style & Naming Conventions
-- Language: TypeScript with `strict` enabled; prefer typed props and avoid `any`.
-- Components: React function components in PascalCase filenames; hooks start with `use*`; utilities in `app/lib/`.
-- Styling: Tailwind CSS v4 via `app/globals.css`; keep class lists focused and drop unused utilities.
-- Imports: use the `@/*` path alias (from `tsconfig.json`); prefer absolute imports over deep relative paths.
-- Linting: follow ESLint rules in `eslint.config.mjs`; run `npm run lint` before pushes.
+## Layout
+- Entry: `app/layout.tsx`, `app/page.tsx`.
+- Features: `app/components/*`, `app/visualizer` (repo graph), `app/terminal`, `app/bash_scripts`.
+- Shared logic: `app/lib/api.ts` (backend proxy + URL helpers), `app/lib/useRepoTree.ts` (repo tree fetch/toggle, 10s timeout), `app/lib/settings.ts` (localStorage-backed UX flags), `app/lib/types.ts` (all shared types).
+- Static assets: `public/`; design notes: `Documentation/`.
 
-## Testing Guidelines
-- No automated tests yet. When adding, provide an `npm run test` script and keep tests deterministic and isolated; colocate tests near the code they cover.
+## Backend Contract (do not bypass)
+- Base URL: dev `http://localhost:4000`; prod `https://tutorial-hub-backend.vercel.app` (see `app/lib/api.ts`).
+- Endpoints in use:
+  - `GET /api/github/user`
+  - `GET /api/github/gists`
+  - `GET /api/github/repos/:repo/contents?path=...`
+  - `GET /api/github/repos/:repo/file?filepath=...` (legacy full fetch)
+  - `GET /api/github/repos/:repo/file/stream?filepath=...&start=...` (preferred streaming; tree/file viewer defaults to repo `i3-scripts`; visualizer targets repo `TutorialHub`).
+- Never call GitHub directly from the browser; no tokens on the client.
 
-## Commit & Pull Request Guidelines
-- History uses short sentence/imperative messages (no Conventional Commit prefixes). Keep summaries under ~72 characters, present tense, e.g., `Add visualizer edges hover state`.
-- Before a PR: run `npm run lint` and `npm run build`; include screenshots for UI changes; link related issues; note deployment impact (basePath/export).
+## Commands
+- `npm install`
+- `npm run dev`
+- `npm run build`  # static export → `out/`
+- `npm run lint`
+- `npm run deploy` # build + `gh-pages -d out`
 
-## Configuration & Security Notes
-- Environment: use a recent Node.js LTS (tested with Node 20+). Store secrets in `.env.local`; never commit tokens.
-- GitHub data components read `NEXT_PUBLIC_GITHUB_USERNAME` (defaults to `ukvee`); set it to point widgets at another profile.
-- Production export relies on `basePath=/TutorialHub`; verify links/assets stay relative when testing `out/` locally (e.g., `npx serve out`).
+## Constraints & Notes
+- Keep static-export compatibility; avoid features needing a Node runtime.
+- BasePath-sensitive: test with `npm run build` + `npx serve out`.
+- Package `homepage` is `https://ukvee/TutorialHub/` (domain missing); leave untouched unless confirmed.
+- Default repo assumptions: tree/file = `i3-scripts`; visualizer = `TutorialHub` for owner `ukVee`.
 
-## Important Concerns
-- This application is a static site and must remain static for github pages deployment to work.
+## Testing
+- None present; any new tests must be deterministic/headless and wired with an explicit `npm run test` script.

@@ -17,6 +17,8 @@ export type FileState = {
   content?: string;
   error?: string;
   visible?: boolean;
+  /** Tracks the in-flight request for this file to ignore stale updates. */
+  requestId?: string;
 };
 
 export type RepoNode = {
@@ -114,6 +116,8 @@ export type MockTerminalProps = {
   script?: { at: number; line: string }[];
   scriptKey?: string | number;
   greet?: boolean;
+  onOpenExplorer?: () => void;
+  fullSize?: boolean;
 };
 
 export type Mode = "HOME" | "GLITCH" | "TERMINAL";

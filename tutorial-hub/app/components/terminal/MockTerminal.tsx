@@ -12,6 +12,8 @@ export default function MockTerminal({
   script = [],
   scriptKey,
   greet = false,
+  onOpenExplorer,
+  fullSize = false,
 }: MockTerminalProps) {
   const [input, setInput] = useState("");
   const [history, setHistory] = useState<string[]>([
@@ -46,15 +48,26 @@ export default function MockTerminal({
         window.dispatchEvent(new CustomEvent("terminal-shake"));
         return "Shaking all nodes...";
       },
+      ls: () => "file_explorer.exe",
+      file_explorer: () => {
+        onOpenExplorer?.();
+        return "Opening file explorer...";
+      },
+      fileexplorer: () => {
+        onOpenExplorer?.();
+        return "Opening file explorer...";
+      },
       help: () => {
         return `
 Available commands:
   spike   – Trigger a random node spike
   shake   – Vibrate all nodes
+  ls      – List binaries
+  file_explorer – Open the file explorer
   help    – Show this help menu`;
       },
     }),
-    []
+    [onOpenExplorer]
   );
 
   const appendHistory = useCallback((line: string) => {
@@ -154,7 +167,7 @@ Available commands:
       tabIndex={0}
       ref={containerRef}
       onKeyDown={handleKeyDown}
-      className={`w-full max-w-2xl rounded-xl border border-[#2a1f44] bg-[#0a0a0d]/95 shadow-[0_0_25px_rgba(120,70,255,0.35)] backdrop-blur-md px-4 py-3 text-sm text-[#d1c5ff] outline-none focus:outline-none relative ${className}`}
+      className={`w-full ${fullSize ? "h-full min-h-[520px] max-w-none" : "max-w-2xl"} rounded-xl border border-[#2a1f44] bg-[#0a0a0d]/95 shadow-[0_0_25px_rgba(120,70,255,0.35)] backdrop-blur-md px-4 py-3 text-sm text-[#d1c5ff] outline-none focus:outline-none relative flex flex-col gap-3 ${className}`}
       style={{
         boxShadow:
           "0 0 25px rgba(120,70,255,0.35), inset 0 0 24px rgba(80,40,160,0.18), 0 0 4px rgba(190,120,255,0.45)",
@@ -163,13 +176,15 @@ Available commands:
       <div className="absolute inset-0 pointer-events-none opacity-40 mix-blend-screen">
         <CanvasGlow />
       </div>
-      <div className="relative flex items-center gap-2 mb-2 text-xs uppercase tracking-[0.24em] text-[#9f8bff]">
+      <div className="relative flex items-center gap-2 text-xs uppercase tracking-[0.24em] text-[#9f8bff]">
         <div className="h-2 w-2 rounded-full bg-[#7c5bff] shadow-[0_0_8px_rgba(124,91,255,0.8)]" />
         Tutorial Hub Terminal
       </div>
       <div
         ref={logRef}
-        className="relative h-64 overflow-y-auto rounded-lg bg-black/30 px-3 py-2 font-mono text-[13px] leading-relaxed shadow-inner border border-[#1c1434]"
+        className={`relative overflow-y-auto rounded-lg bg-black/30 px-3 py-2 font-mono text-[13px] leading-relaxed shadow-inner border border-[#1c1434] ${
+          fullSize ? "flex-1 min-h-[360px]" : "h-64"
+        }`}
       >
         {history.map((line, idx) => (
           <div key={idx} className="whitespace-pre-wrap">

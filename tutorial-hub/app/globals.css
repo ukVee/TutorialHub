@@ -84,6 +84,20 @@ body {
   box-shadow: 0 26px 60px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.05);
   overflow: hidden;
   min-height: 520px;
+  display: flex;
+}
+
+.explorer-overlay {
+  position: absolute;
+  inset: 12px;
+  z-index: 12;
+  display: flex;
+  pointer-events: none;
+}
+
+.explorer-overlay > * {
+  pointer-events: auto;
+  width: 100%;
 }
 
 .shell-screen {
@@ -233,10 +247,14 @@ body {
   min-height: 0;
 }
 
+.explorer-layout--compact {
+  flex-direction: column;
+}
+
 .explorer-tree {
-  width: 50%;
-  max-width: 520px;
-  min-width: 260px;
+  width: 45%;
+  max-width: 480px;
+  min-width: 220px;
   border-right: 1px solid rgba(71, 85, 105, 0.55);
   padding-right: 10px;
   overflow-y: auto;
@@ -246,18 +264,25 @@ body {
   min-height: 0;
 }
 
+.explorer-tree--compact {
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  border-right: none;
+  padding-right: 0;
+}
+
 .explorer-preview {
   flex: 1;
-  padding-left: 4px;
-  overflow: auto;
-  transform: translateX(12px);
+  padding-left: 0;
+  overflow: hidden;
   opacity: 0;
-  transition: transform 160ms ease, opacity 160ms ease;
+  transition: opacity 160ms ease;
   min-height: 0;
+  max-width: 100%;
 }
 
 .explorer-preview--visible {
-  transform: translateX(0);
   opacity: 1;
 }
 
@@ -267,14 +292,14 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  padding: 6px 8px;
+  padding: 5px 7px;
   border-radius: 8px;
   background: rgba(15, 23, 42, 0.35);
   border: 1px solid rgba(71, 85, 105, 0.45);
   color: #e2e8f0;
   text-align: left;
   transition: border-color 120ms ease, background 120ms ease;
-  min-height: 36px;
+  min-height: 32px;
 }
 
 .tree-row:hover {
@@ -315,11 +340,11 @@ body {
 }
 
 .tree-row__btn {
-  padding: 4px 8px;
+  padding: 3px 7px;
   border-radius: 6px;
   border: 1px solid rgba(124, 58, 237, 0.5);
   background: rgba(124, 58, 237, 0.15);
-  font-size: 11px;
+  font-size: 10px;
   color: #e2e8f0;
   transition: background 120ms ease, border-color 120ms ease;
 }
@@ -327,6 +352,52 @@ body {
 .tree-row__btn:hover {
   border-color: rgba(124, 58, 237, 0.8);
   background: rgba(124, 58, 237, 0.25);
+}
+
+.tree-inline-preview {
+  margin-top: 6px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(124, 58, 237, 0.35);
+  background: rgba(17, 24, 39, 0.6);
+  max-height: 320px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.preview-body--inline {
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.preview-body,
+.preview-body--inline {
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  width: 100%;
+  max-width: 100%;
+}
+
+.preview-line {
+  display: grid;
+  grid-template-columns: 2.5ch minmax(0, 1fr);
+  gap: 8px;
+  align-items: baseline;
+  width: 100%;
+}
+
+.preview-line__num {
+  color: #94a3b8;
+  font-size: 11px;
+  text-align: right;
+  min-width: 24px;
+  user-select: none;
+}
+
+.preview-line__text {
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
+  white-space: inherit;
 }
 
 .tree-children {
