@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import type { RippleLoadProps, RippleTheme } from "../../../lib/types";
+import type { RippleLoadProps, RippleTheme } from "../../lib/types";
 
 // Default palette tuned to the existing neon-purple slate theme.
 const DEFAULT_THEME: Required<RippleTheme> = {
