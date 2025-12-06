@@ -69,19 +69,19 @@ export default function SettingsModal({ open, settings, onClose, onUpdate }: Set
         <div className="mt-5 space-y-3">
           <SettingToggle
             label="Glitch intro"
-            description="Play the glitch + terminal sequence on first visit."
+            description="Play the glitch + terminal sequence again."
             checked={settings.displayGlitch}
             onChange={(next) => onUpdate({ displayGlitch: next })}
           />
           <SettingToggle
             label="Splash screen"
-            description="Show the animated splash cover before loading the page."
+            description="Show the animated splash before loading the homepage."
             checked={settings.displaySplash}
             onChange={(next) => onUpdate({ displaySplash: next })}
           />
           <SettingToggle
-            label="Cache GitHub stats"
-            description="Store GitHub profile stats locally for faster reloads."
+            label="Cache Homepage"
+            description="Can I cache my homepage on your device for quicker loading times?"
             checked={settings.cacheGithub}
             onChange={(next) => onUpdate({ cacheGithub: next })}
           />

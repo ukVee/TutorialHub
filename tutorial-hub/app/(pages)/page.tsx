@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+// import { useRouter } from "next/navigation";
 
 import { NeuralMesh, MockTerminal } from "../components";
 import SettingsModal from "../components/modals/SettingsModal";
@@ -35,8 +35,6 @@ export default function Home() {
   const [terminalScriptKey, setTerminalScriptKey] = useState(0);
   const timersRef = useRef<number[]>([]);
   const sequenceStartedRef = useRef(false);
-
-  const router = useRouter();
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -199,10 +197,10 @@ export default function Home() {
           }}
           debugLabel="SplashInitial"
         >
-          <MainContent settings={settings} router={router} />
+          <MainContent settings={settings} />
         </SplashGate>
       ) : (
-        <MainContent settings={settings} router={router} />
+        <MainContent settings={settings} />
       )}
       {showPostSplash && (
         <SplashGate
@@ -220,7 +218,7 @@ export default function Home() {
   );
 }
 
-function MainContent({ settings, router }: { settings: UserSettings; router: ReturnType<typeof useRouter> }) {
+function MainContent({ settings }: { settings: UserSettings }) {
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-black text-slate-100">
       <div className="mx-auto flex max-w-6xl flex-col gap-12 px-6 py-12 md:px-10 lg:px-12">
@@ -228,51 +226,24 @@ function MainContent({ settings, router }: { settings: UserSettings; router: Ret
           <div className="space-y-6">
             <p className="text-xs uppercase tracking-[0.28em] text-slate-400">Tutorial Hub</p>
             <h1 className="text-4xl font-semibold leading-tight text-white md:text-5xl">
-              Gist Tutorials, my bash scripts that I use, and a live terminal playground.
+              Your place for Arch specific tutorials and scripts
             </h1>
             <p className="text-base text-slate-200/90 leading-relaxed">
-              Hii you can call me vee, I love all things linux.  I really do.  If you happen to run Arch linux, I may have some goodies for you below.
+              Hii you can call me ukv, I love all things linux.  I really do.  If you happen to run Arch linux, I may have some goodies for you.
             </p>
-            <div className="flex flex-wrap gap-3">
-              <button
-                className="rounded-full bg-slate-100 px-5 py-2 text-sm font-semibold text-slate-900 shadow-lg shadow-slate-900/40 transition hover:-translate-y-0.5 hover:bg-white"
-                onClick={() => router.push('/terminal')}
-              >
-                Open Terminal
-              </button>
-              <button
-                className="rounded-full border border-slate-700 px-5 py-2 text-sm font-semibold text-slate-100/90 transition hover:-translate-y-0.5 hover:border-slate-400 hover:text-white"
-                onClick={() => document.getElementById("gists")?.scrollIntoView({ behavior: "smooth" })}
-              >
-                Browse Gists
-              </button>
-            </div>
-          </div>
-          <div className="panel ring-1 ring-slate-800/80 shadow-2xl shadow-slate-950/60 backdrop-blur">
-            <p className="text-sm text-slate-300/90">
-              Local settings are stored on your device.
-              Current preference:
-            </p>
-            <div className="mt-3 flex items-center gap-3 text-sm text-slate-100">
-              <span className="inline-flex h-3 w-3 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.7)]" />
-              <span className="text-slate-200">
-                Glitch on first visit:&nbsp;
-                <strong>{settings.displayGlitch ? "Pending" : "Disabled"}</strong>
-              </span>
-            </div>
           </div>
         </section>
 
-        <section aria-labelledby="github-stats">
-          <div className="flex items-center justify-between gap-3">
-            <div>
+        <section aria-labelledby="stats-and-settings" className="flex justify-center">
+          <div className="space-y-3 w-full max-w-md">
+            <div className="text-center">
               <p className="text-xs uppercase tracking-[0.28em] text-slate-400">GitHub Pulse</p>
-              <h2 id="github-stats" className="text-2xl font-semibold text-white">
+              <h2 id="stats-and-settings" className="text-2xl font-semibold text-white">
                 Current Stats
               </h2>
             </div>
+            <GitHubStats cacheEnabled={settings.cacheGithub} />
           </div>
-          <GitHubStats cacheEnabled={settings.cacheGithub} />
         </section>
 
         <section id="gists" aria-labelledby="gist-grid" className="pb-10">
