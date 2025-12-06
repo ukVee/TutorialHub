@@ -4,13 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { NeuralMesh, MockTerminal } from "../components";
-import {
-  GitHubStats,
-  GistGrid,
-  ApologyMessage,
-  GlitchOverlay,
-  CompositeGlitchScene
-} from "../features/homepage";
+import SettingsModal from "../components/modals/SettingsModal";
+import { GitHubStats, GistGrid, GlitchOverlay, CompositeGlitchScene } from "../features/homepage";
+import ApologyMessageModal from "../components/modals/ApologyMessageModal";
 import { SplashGate } from "../features/splash";
 
 import { defaultSettings, getSettings, saveSettings } from "../lib/settings";
@@ -30,6 +26,7 @@ export default function Home() {
   const [glitchActive, setGlitchActive] = useState(false);
   const [showApology, setShowApology] = useState(false);
   const [mode, setMode] = useState<Mode>("HOME");
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [splashDone, setSplashDone] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
   const [allowGlitch, setAllowGlitch] = useState(true);
@@ -53,18 +50,20 @@ export default function Home() {
   // Splash + glitch first visit only. Once seen, disable both for subsequent visits/navigations.
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const hasSeen = window.localStorage.getItem("thub_seen_home") === "1";
+    if (!settingsReady) return;
+
     requestAnimationFrame(() => {
-      if (hasSeen) {
+      if (!settings.displaySplash) {
         setShowSplash(false);
         setSplashDone(true);
-        setAllowGlitch(false);
       } else {
         setShowSplash(true);
-        setAllowGlitch(true);
+        setSplashDone(false);
       }
+
+      setAllowGlitch(settings.displayGlitch);
     });
-  }, []);
+  }, [settings.displayGlitch, settings.displaySplash, settingsReady]);
 
   // Clear any outstanding timers on unmount.
   useEffect(() => {
@@ -144,6 +143,14 @@ export default function Home() {
     timersRef.current.push(startGlitchTimer);
   }, [allowGlitch, settings, settingsReady, splashDone]);
 
+  const updateSettings = (patch: Partial<UserSettings>) => {
+    setSettings((prev) => {
+      const next = { ...prev, ...patch };
+      saveSettings(next);
+      return next;
+    });
+  };
+
   if (mode === "TERMINAL") {
     return (
       <div className="fixed inset-0 z-60 bg-[#05040b]">
@@ -157,13 +164,33 @@ export default function Home() {
 
   return (
     <>
+      <button
+        aria-label="Open settings"
+        onClick={() => setSettingsOpen(true)}
+        className="fixed right-5 top-5 z-[65] rounded-full border border-slate-800/80 bg-slate-950/80 p-3 text-slate-200 shadow-lg shadow-slate-950/60 backdrop-blur transition hover:-translate-y-0.5 hover:border-slate-500 hover:text-white"
+      >
+        <span className="sr-only">Open settings</span>
+        <span className="flex flex-col gap-1.5">
+          <span className="block h-0.5 w-6 rounded-full bg-current" />
+          <span className="block h-0.5 w-6 rounded-full bg-current" />
+          <span className="block h-0.5 w-6 rounded-full bg-current" />
+        </span>
+      </button>
+
+      <SettingsModal
+        open={settingsOpen}
+        settings={settings}
+        onClose={() => setSettingsOpen(false)}
+        onUpdate={updateSettings}
+      />
+
       <CompositeGlitchScene
         active={mode === "GLITCH"}
         terminalScript={terminalScript}
         terminalScriptKey={terminalScriptKey}
       />
       <GlitchOverlay active={glitchActive} />
-      <ApologyMessage show={showApology} />
+      <ApologyMessageModal show={showApology} />
       {showSplash ? (
         <SplashGate
           onComplete={() => {

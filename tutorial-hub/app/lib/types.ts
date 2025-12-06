@@ -156,6 +156,20 @@ export type SplashGateProps = {
   debugLabel?: string;
 };
 
+export type SettingToggleProps = {
+  label: string;
+  description?: string;
+  checked: boolean;
+  onChange: (next: boolean) => void;
+};
+
+export type SettingsModalProps = {
+  open: boolean;
+  settings: UserSettings;
+  onClose: () => void;
+  onUpdate: (patch: Partial<UserSettings>) => void;
+};
+
 export type UserSettings = {
   displaySplash: boolean;
   displayGlitch: boolean;
