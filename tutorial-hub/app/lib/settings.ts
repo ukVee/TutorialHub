@@ -6,6 +6,7 @@ export const defaultSettings: UserSettings = {
   displaySplash: true,
   displayGlitch: true,
   theme: "dark",
+  cacheGithub: true,
 };
 
 const STORAGE_KEY = "tutorial-hub-settings";

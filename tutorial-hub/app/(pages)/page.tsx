@@ -272,7 +272,7 @@ function MainContent({ settings, router }: { settings: UserSettings; router: Ret
               </h2>
             </div>
           </div>
-          <GitHubStats />
+          <GitHubStats cacheEnabled={settings.cacheGithub} />
         </section>
 
         <section id="gists" aria-labelledby="gist-grid" className="pb-10">

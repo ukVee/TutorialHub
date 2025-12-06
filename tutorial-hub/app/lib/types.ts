@@ -75,6 +75,10 @@ export type GitHubUserStats = {
   following: number;
 };
 
+export type GitHubStatsProps = {
+  cacheEnabled: boolean;
+};
+
 export type GlitchOverlayProps = {
   active: boolean;
 };
@@ -174,6 +178,7 @@ export type UserSettings = {
   displaySplash: boolean;
   displayGlitch: boolean;
   theme: "dark" | "light";
+  cacheGithub: boolean;
 };
 
 export type RippleTheme = {

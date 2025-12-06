@@ -79,6 +79,12 @@ export default function SettingsModal({ open, settings, onClose, onUpdate }: Set
             checked={settings.displaySplash}
             onChange={(next) => onUpdate({ displaySplash: next })}
           />
+          <SettingToggle
+            label="Cache GitHub stats"
+            description="Store GitHub profile stats locally for faster reloads."
+            checked={settings.cacheGithub}
+            onChange={(next) => onUpdate({ cacheGithub: next })}
+          />
         </div>
       </div>
     </div>

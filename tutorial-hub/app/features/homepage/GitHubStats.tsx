@@ -3,9 +3,34 @@
 
 import { useEffect, useState } from "react";
 import { apiGet } from "../../lib/api";
-import type { GitHubUserStats } from "../../lib/types";
+import type { GitHubStatsProps, GitHubUserStats } from "../../lib/types";
 
-export default function GitHubStats() {
+const CACHE_KEY = "thub_cache_github_user";
+type CachedPayload = { data: GitHubUserStats; cachedAt: number };
+
+const readCache = (): CachedPayload | null => {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as CachedPayload;
+    if (!parsed?.data || typeof parsed.cachedAt !== "number") return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+};
+
+const writeCache = (payload: CachedPayload) => {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(CACHE_KEY, JSON.stringify(payload));
+  } catch {
+    /* ignore storage errors */
+  }
+};
+
+export default function GitHubStats({ cacheEnabled }: GitHubStatsProps) {
   const [stats, setStats] = useState<GitHubUserStats | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -13,11 +38,33 @@ export default function GitHubStats() {
     let cancelled = false;
 
     const load = async () => {
+      // Serve cached data immediately if allowed.
+      if (cacheEnabled) {
+        const cached = readCache();
+        if (cached) {
+          setStats(cached.data);
+        }
+      }
+
       try {
         const data = await apiGet<GitHubUserStats>("/api/github/user");
-        if (!cancelled) setStats(data);
+        if (cancelled) return;
+
+        setStats(data);
+        setError(null);
+
+        if (cacheEnabled) {
+          writeCache({ data, cachedAt: Date.now() });
+        }
       } catch (err) {
-        if (!cancelled) setError("GitHub is shy right now (rate limit or offline).");
+        if (!cancelled) {
+          setError("GitHub is shy right now (rate limit or offline).");
+          // fall back to stale cache if available
+          if (cacheEnabled) {
+            const cached = readCache();
+            if (cached) setStats((prev) => prev ?? cached.data);
+          }
+        }
         console.error(err);
       }
     };
@@ -26,7 +73,7 @@ export default function GitHubStats() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [cacheEnabled]);
 
   if (error) {
     return (

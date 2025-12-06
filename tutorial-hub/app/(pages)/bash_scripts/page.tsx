@@ -1,7 +1,7 @@
 "use client";
 
 import NeuralMesh from "../../components/terminal/NeuralMesh";
-import RepoExplorer from "../../features/repo-explorer/RepoExplorer";
+import { RepoExplorer } from "../../features/repo-explorer";
 
 export default function BashScriptsPage() {
   return (
