@@ -28,27 +28,35 @@ export function CarouselNav() {
     NAV_PAGES[(activeIdx + 1) % NAV_PAGES.length],
   ];
 
-  const displayNames = displayDots; // same ordering: prev, current, next
+  const displayNames = NAV_PAGES; // fixed ordering; active marked with pipes
+  const activePage = NAV_PAGES[activeIdx];
+  const homePage = NAV_PAGES.find((p) => p.path === "/") ?? NAV_PAGES[1];
+  const topPages = NAV_PAGES.filter((p) => p.path !== homePage.path);
 
   const rhombusClip = "[clip-path:polygon(0_20%,100%_20%,92%_100%,8%_100%)]";
 
   return (
     <>
-      <div className="pointer-events-auto fixed left-0 right-0 top-2 z-50 flex justify-center">
-        <div className={`relative inline-flex overflow-hidden rounded-md bg-slate-900/80 px-9 py-2 ring-1 ring-slate-800/70 shadow-lg backdrop-blur ${rhombusClip}`} style={{ minWidth: "440px", maxWidth: "660px", width: "84vw" }}>
+      {/* desktop / tablet >= 600px */}
+      <div className="pointer-events-auto fixed left-0 right-0 top-2 z-50 justify-center nav-desktop">
+        <div
+          className={`relative inline-flex overflow-hidden rounded-md bg-slate-900/80 px-9 py-2 ring-1 ring-slate-800/70 shadow-lg backdrop-blur ${rhombusClip}`}
+          style={{ minWidth: "440px", maxWidth: "660px", width: "84vw" }}
+        >
           <div className="flex w-full items-center gap-6">
             {displayNames.map((page, idx) => {
-              const isActive = idx === 1;
+              const isActive = idx === activeIdx;
               const justify = idx === 0 ? "justify-start" : idx === 1 ? "justify-center" : "justify-end";
               return (
-                <div key={`${page.path}-wrapper`} className={`flex flex-1 ${justify} ${idx === 0 ? "pl-4" : idx === 2 ? "pr-4" : ""}`}>
+                <div
+                  key={`${page.path}-wrapper`}
+                  className={`flex flex-1 ${justify} ${idx === 0 ? "pl-4" : idx === 2 ? "pr-4" : ""}`}
+                >
                   <button
                     key={`${page.path}-label`}
-                    onClick={() => move(idx === 0 ? -1 : idx === 1 ? 0 : 1)}
+                    onClick={() => router.push(page.path)}
                     className={`whitespace-nowrap rounded px-3 uppercase tracking-[0.16em] text-xs transition ${
-                      isActive
-                        ? "text-slate-50"
-                        : "text-slate-400 hover:text-slate-200"
+                      isActive ? "text-slate-50" : "text-slate-400 hover:text-slate-200"
                     }`}
                     aria-label={`Go to ${page.label}`}
                   >
@@ -57,6 +65,47 @@ export function CarouselNav() {
                 </div>
               );
             })}
+          </div>
+        </div>
+      </div>
+
+      {/* mobile < 600px: split into double rhombus; Home anchored on bottom rhombus */}
+      <div className="pointer-events-auto fixed left-0 right-0 top-2 z-50 justify-center nav-mobile">
+        <div className="double-rhombus flex flex-col items-center">
+          <div
+            className={`rhombus-mobile rhombus-top relative inline-flex overflow-hidden rounded-md bg-slate-900/80 px-6 py-2 ring-1 ring-slate-800/70 shadow-lg backdrop-blur ${rhombusClip}`}
+            style={{ width: "92vw", maxWidth: "440px" }}
+          >
+            <div className="flex w-full items-center justify-between gap-3 text-xs uppercase tracking-[0.16em]">
+              {topPages.map((page) => {
+                const isActive = page.path === activePage.path;
+                return (
+                  <button
+                    key={`${page.path}-mobile-top`}
+                    onClick={() => router.push(page.path)}
+                    className="whitespace-nowrap rounded px-3 text-slate-200 transition hover:text-slate-50"
+                    aria-label={`Go to ${page.label}`}
+                  >
+                    {isActive ? `| ${page.label} |` : page.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div
+            className={`rhombus-mobile rhombus-bottom relative inline-flex overflow-hidden rounded-md bg-slate-900/85 px-7 py-2.5 ring-1 ring-slate-800/70 shadow-lg backdrop-blur ${rhombusClip}`}
+            style={{ width: "clamp(160px, 60vw, 260px)" }}
+          >
+            <div className="flex w-full items-center justify-center">
+              <button
+                onClick={() => router.push(homePage.path)}
+                className="whitespace-nowrap rounded px-3 uppercase tracking-[0.16em] text-xs text-slate-50"
+                aria-label={`Home page ${homePage.label}`}
+              >
+                {activePage.path === homePage.path ? `| ${homePage.label} |` : homePage.label}
+              </button>
+            </div>
           </div>
         </div>
       </div>

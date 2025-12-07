@@ -165,7 +165,7 @@ export default function Home() {
       <button
         aria-label="Open settings"
         onClick={() => setSettingsOpen(true)}
-        className="fixed right-5 top-5 z-[65] rounded-full border border-slate-800/80 bg-slate-950/80 p-3 text-slate-200 shadow-lg shadow-slate-950/60 backdrop-blur transition hover:-translate-y-0.5 hover:border-slate-500 hover:text-white"
+        className="settings-trigger fixed right-5 top-5 z-[65] rounded-full border border-slate-800/80 bg-slate-950/80 p-3 text-slate-200 shadow-lg shadow-slate-950/60 backdrop-blur transition hover:-translate-y-0.5 hover:border-slate-500 hover:text-white"
       >
         <span className="sr-only">Open settings</span>
         <span className="flex flex-col gap-1.5">

@@ -25,6 +25,51 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* Carousel responsive rhombus controls */
+.nav-desktop {
+  display: flex;
+}
+
+.nav-mobile {
+  display: none;
+}
+
+@media (max-width: 600px) {
+  .nav-desktop {
+    display: none;
+  }
+
+  .nav-mobile {
+    display: flex;
+  }
+
+  .double-rhombus {
+    gap: 0;
+  }
+
+  .rhombus-top {
+    margin-bottom: -10px; /* visually connect to lower rhombus */
+    z-index: 2;
+  }
+
+  .rhombus-bottom {
+    z-index: 1;
+  }
+}
+
+/* Settings hamburger responsiveness */
+.settings-trigger {
+  top: 20px;
+}
+
+@media (max-width: 600px) {
+  .settings-trigger {
+    top: auto;
+    bottom: 18px;
+    right: 18px;
+  }
+}
+
 /* Splash styles */
 .splash-overlay {
   position: fixed;
