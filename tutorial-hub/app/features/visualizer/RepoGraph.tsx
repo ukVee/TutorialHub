@@ -1,7 +1,7 @@
 "use client";
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, forwardRef, useImperativeHandle } from "react";
 import type { MutableRefObject } from "react";
 import type { GraphData } from "three-forcegraph";
 import * as THREE from "three";
@@ -38,6 +38,38 @@ function OrbitControls() {
   useEffect(() => () => controls.dispose(), [controls]);
 
   useFrame(() => controls.update());
+  return null;
+}
+
+function RideController({ curve, onFinish }: { curve: THREE.CatmullRomCurve3; onFinish: () => void }) {
+  const { camera } = useThree();
+  const progress = useRef(0);
+  const speed = 0.00015; // Base speed, can be dynamic based on segment length
+  const offsetAmount = 1.2; // How much above the track the camera should be
+
+  useFrame(() => {
+    if (progress.current >= 1) {
+      onFinish();
+      return;
+    }
+
+    progress.current += speed;
+    if (progress.current > 1) progress.current = 1;
+
+    const currentPos = curve.getPointAt(progress.current);
+    const lookAtPos = curve.getPointAt(Math.min(progress.current + 0.01, 1)); // Look slightly ahead
+
+    const tangent = curve.getTangentAt(progress.current).normalize();
+    const up = new THREE.Vector3(0, 1, 0); // World up vector
+    const binormal = new THREE.Vector3().crossVectors(tangent, up).normalize();
+    const normal = new THREE.Vector3().crossVectors(binormal, tangent).normalize(); // Local up vector
+
+    const cameraUpPos = currentPos.clone().add(normal.multiplyScalar(offsetAmount));
+
+    camera.position.lerp(cameraUpPos, 0.1);
+    camera.lookAt(lookAtPos);
+  });
+
   return null;
 }
 
@@ -178,64 +210,146 @@ function updateLinkObject(
   }
 }
 
-function ForceGraphPrimitive({ data }: { data: GraphData<GraphNode, GraphLink> }) {
-  const [forceGraph, setForceGraph] = useState<ForceGraphInstance | null>(null);
-  const meshMaterials = useRef<MeshLineMaterial[]>([]);
+const ForceGraphPrimitive = forwardRef<ForceGraphInstance, { data: GraphData<GraphNode, GraphLink> }>(
+  ({ data }, ref) => {
+    const [forceGraph, setForceGraph] = useState<ForceGraphInstance | null>(null);
+    const meshMaterials = useRef<MeshLineMaterial[]>([]);
 
-  useEffect(() => {
-    let mounted = true;
-    let instance: ForceGraphInstance | null = null;
+    useImperativeHandle(ref, () => forceGraph as ForceGraphInstance, [forceGraph]);
 
-    (async () => {
-      const { default: ForceGraph } = await import("three-forcegraph");
-      if (!mounted) return;
+    useEffect(() => {
+      let mounted = true;
+      let instance: ForceGraphInstance | null = null;
 
-      instance = new ForceGraph<GraphNode, GraphLink>();
-      instance.nodeThreeObject((node) => buildNodeObject(node as GraphNode));
-      instance.linkThreeObject((link) => buildLinkObject(link as GraphLink, meshMaterials));
-      instance.linkThreeObjectExtend(true);
-      instance.linkPositionUpdate((obj, coords, link) => updateLinkObject(obj, coords.start, coords.end, link as GraphLink));
-      instance.d3Force("charge")?.strength(-140);
-      instance.d3Force("link")?.distance((link: GraphLink & { target?: GraphNode }) => {
-        if (link.type === "mesh") return 10;
-        if ((link.target as GraphNode | undefined)?.type === "file") return 18;
-        return 28;
+      (async () => {
+        const { default: ForceGraph } = await import("three-forcegraph");
+        if (!mounted) return;
+
+        instance = new ForceGraph<GraphNode, GraphLink>();
+        instance.nodeThreeObject((node) => buildNodeObject(node as GraphNode));
+        instance.linkThreeObject((link) => buildLinkObject(link as GraphLink, meshMaterials));
+        instance.linkThreeObjectExtend(true);
+        instance.linkPositionUpdate((obj, coords, link) =>
+          updateLinkObject(obj, coords.start, coords.end, link as GraphLink),
+        );
+        instance.d3Force("charge")?.strength(-140);
+        instance.d3Force("link")?.distance((link: GraphLink & { target?: GraphNode }) => {
+          if (link.type === "mesh") return 10;
+          if ((link.target as GraphNode | undefined)?.type === "file") return 18;
+          return 28;
+        });
+        instance.numDimensions(3);
+        instance.warmupTicks(90);
+        instance.cooldownTime(18000);
+        instance.graphData(data);
+        setForceGraph(instance);
+      })();
+
+      return () => {
+        mounted = false;
+        meshMaterials.current.forEach((mat) => mat.dispose());
+        meshMaterials.current = [];
+        if (instance) {
+          instance.graphData({ nodes: [], links: [] });
+        }
+      };
+    }, [data]);
+
+    useFrame(({ clock }) => {
+      const t = clock.getElapsedTime();
+      meshMaterials.current.forEach((material, idx) => {
+        material.opacity = 0.28 + 0.22 * Math.sin(t * 1.3 + idx * 0.7);
+        material.dashOffset -= 0.0018;
+        if (material.dashOffset < -1) material.dashOffset = 0;
       });
-      instance.numDimensions(3);
-      instance.warmupTicks(90);
-      instance.cooldownTime(18000);
-      instance.graphData(data);
-      setForceGraph(instance);
-    })();
 
-    return () => {
-      mounted = false;
-      meshMaterials.current.forEach((mat) => mat.dispose());
-      meshMaterials.current = [];
-      if (instance) {
-        instance.graphData({ nodes: [], links: [] });
+      if (forceGraph) {
+        (forceGraph as unknown as { tickFrame: () => void }).tickFrame();
       }
-    };
-  }, [data]);
-
-  useFrame(({ clock }) => {
-    const t = clock.getElapsedTime();
-    meshMaterials.current.forEach((material, idx) => {
-      material.opacity = 0.28 + 0.22 * Math.sin(t * 1.3 + idx * 0.7);
-      material.dashOffset -= 0.0018;
-      if (material.dashOffset < -1) material.dashOffset = 0;
     });
 
-    if (forceGraph) {
-      // Advance physics simulation
-      (forceGraph as unknown as { tickFrame: () => void }).tickFrame();
-    }
-  });
-
-  return forceGraph ? <primitive object={forceGraph} /> : null;
-}
+    return forceGraph ? <primitive object={forceGraph} /> : null;
+  },
+);
+ForceGraphPrimitive.displayName = "ForceGraphPrimitive";
 
 export default function RepoGraph({ data }: RepoGraphProps) {
+  const fgRef = useRef<ForceGraphInstance>(null);
+  const [isRiding, setIsRiding] = useState(false);
+  const [rideCurve, setRideCurve] = useState<THREE.CatmullRomCurve3 | null>(null);
+
+  const handleStartRide = () => {
+    if (!fgRef.current) return;
+    const graphData = fgRef.current.graphData();
+    const { nodes, links } = graphData;
+    
+    // Pause simulation to keep nodes stable
+    // @ts-expect-error d3Force is typed dynamically
+    fgRef.current.d3Force('charge', null);
+    // @ts-expect-error d3Force is typed dynamically
+    fgRef.current.d3Force('link', null);
+    // @ts-expect-error d3Force is typed dynamically
+    fgRef.current.d3Force('center', null);
+
+
+    // Build Adjacency Map
+    const childrenMap = new Map<string, string[]>();
+    let rootId: string | null = null;
+
+    links.forEach((link) => {
+      if (link.type === "hierarchy") {
+        // three-forcegraph converts source/target to objects or strings.
+        // We need IDs.
+        const sourceId = typeof link.source === 'object' ? (link.source as GraphNode).id : link.source;
+        const targetId = typeof link.target === 'object' ? (link.target as GraphNode).id : link.target;
+
+        if (!childrenMap.has(sourceId)) childrenMap.set(sourceId, []);
+        childrenMap.get(sourceId)!.push(targetId);
+      }
+    });
+
+    // Find Root (simplest way: node with type 'root' or first node)
+    const rootNode = nodes.find(n => n.type === 'root') || nodes[0];
+    if (!rootNode) return;
+    rootId = rootNode.id;
+
+    // Build Path (DFS)
+    const pathPoints: THREE.Vector3[] = [];
+    const visited = new Set<string>();
+
+    const traverse = (nodeId: string) => {
+      const node = nodes.find(n => n.id === nodeId);
+      if (!node || typeof node.x !== 'number' || typeof node.y !== 'number' || typeof node.z !== 'number') return;
+      
+      // Add point entering
+      pathPoints.push(new THREE.Vector3(node.x, node.y, node.z));
+      visited.add(nodeId);
+
+      const children = childrenMap.get(nodeId) || [];
+      // Sort children for consistent path? Maybe files last.
+      children.sort(); // Alphabetic sort by ID for now
+
+      for (const childId of children) {
+        if (!visited.has(childId)) {
+          traverse(childId);
+          // Add point returning to parent (to make loop continuous/smooth without jumps)
+          pathPoints.push(new THREE.Vector3(node.x, node.y, node.z));
+        }
+      }
+    };
+
+    traverse(rootId);
+
+    // Smooth out the path? CatmullRom handles it.
+    // If we have enough points.
+    if (pathPoints.length < 2) return;
+
+    const curve = new THREE.CatmullRomCurve3(pathPoints);
+    curve.tension = 0.5; // Standard tension
+    setRideCurve(curve);
+    setIsRiding(true);
+  };
+
   return (
     <div className="relative h-screen w-full" style={{ background: palette.backdrop }}>
       <Canvas
@@ -253,8 +367,14 @@ export default function RepoGraph({ data }: RepoGraphProps) {
           groundColor="#0b0f1a"
         />
 
-        {data && <ForceGraphPrimitive data={data} />}
-        <OrbitControls />
+        {data && <ForceGraphPrimitive ref={fgRef} data={data} />}
+        
+        {isRiding && rideCurve ? (
+          <RideController curve={rideCurve} onFinish={() => setIsRiding(false)} />
+        ) : (
+          <OrbitControls />
+        )}
+        
         <BloomPass />
       </Canvas>
 
@@ -264,12 +384,30 @@ export default function RepoGraph({ data }: RepoGraphProps) {
           background: "radial-gradient(circle at 30% 30%, rgba(255,255,255,0.08), transparent 38%), radial-gradient(circle at 70% 60%, rgba(124,255,224,0.06), transparent 46%)",
         }}
       />
-      <div className="absolute left-6 top-6 space-y-2 text-sm text-[#9efeff] drop-shadow-[0_0_12px_rgba(114,240,255,0.45)]">
-        <div className="font-semibold uppercase tracking-[0.18em] text-[#7cffe0]">Repo Visualizer</div>
-        <p className="max-w-md text-[#c6f6ff]/80">
-          Directories glow as large spheres. Files appear as mirrored pyramids orbiting their folder.
-          Sibling files weave neon mesh-lines to form neural clusters.
-        </p>
+      <div className="absolute left-6 top-6 space-y-4 text-sm text-[#9efeff] drop-shadow-[0_0_12px_rgba(114,240,255,0.45)]">
+        <div>
+          <div className="font-semibold uppercase tracking-[0.18em] text-[#7cffe0]">Repo Visualizer</div>
+          <p className="max-w-md text-[#c6f6ff]/80 text-xs mt-1">
+            Directories glow as large spheres. Files appear as mirrored pyramids orbiting their folder.
+          </p>
+        </div>
+        
+        <button
+          onClick={handleStartRide}
+          disabled={isRiding || !data}
+          className={`
+            pointer-events-auto
+            rounded border border-[#7cffe0] px-4 py-2 
+            text-xs font-bold uppercase tracking-widest 
+            transition-all duration-300
+            ${isRiding 
+              ? "bg-[#7cffe0]/10 text-[#7cffe0]/50 cursor-wait" 
+              : "bg-transparent text-[#7cffe0] hover:bg-[#7cffe0] hover:text-[#05060c] hover:shadow-[0_0_20px_#7cffe0]"
+            }
+          `}
+        >
+          {isRiding ? "Riding Path..." : "Start Roller Coaster"}
+        </button>
       </div>
     </div>
   );
