@@ -284,11 +284,8 @@ export default function RepoGraph({ data }: RepoGraphProps) {
     const { nodes, links } = graphData;
     
     // Pause simulation to keep nodes stable
-    // @ts-expect-error d3Force is typed dynamically
     fgRef.current.d3Force('charge', null);
-    // @ts-expect-error d3Force is typed dynamically
     fgRef.current.d3Force('link', null);
-    // @ts-expect-error d3Force is typed dynamically
     fgRef.current.d3Force('center', null);
 
 
